@@ -1,0 +1,33 @@
+services:
+  app:
+    build: .
+    container_name: module2-app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app/app # dev: live source for --reload
+      - ./data:/app/data # persist SQLite across restarts
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+
+  # ---- Optional Postgres for later ----
+  # Uncomment this block + the volumes block below, then set DATABASE_URL in .env to:
+  #   postgresql+psycopg://module2:module2@db:5432/module2
+  # (and add "psycopg[binary]" to pyproject dependencies)
+  #
+  # db:
+  #   image: postgres:16-alpine
+  #   container_name: module2-db
+  #   environment:
+  #     POSTGRES_USER: module2
+  #     POSTGRES_PASSWORD: module2
+  #     POSTGRES_DB: module2
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+
+# volumes:
+#   pgdata:
