@@ -27,5 +27,5 @@ data/
 .vscode/
 
 # Context / memory docs (not committed)
-ai_ctx.md
-module-2-api-contract.md
+# ai_ctx.md
+# module-2-api-contract.md

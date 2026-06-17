@@ -14,6 +14,7 @@ from app.config import settings
 from app.db import init_db
 from app.errors import register_exception_handlers
 from app.responses import ApiResponse, success
+from app.routes import router as module2_router
 
 logging.basicConfig(level=logging.DEBUG if settings.debug else logging.INFO)
 
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
     )
 
     register_exception_handlers(app)
+    app.include_router(module2_router)
 
     @app.get("/", response_model=ApiResponse, tags=["meta"])
     def root() -> ApiResponse:

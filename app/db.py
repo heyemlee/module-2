@@ -41,8 +41,9 @@ def init_db() -> None:
         if parent:
             os.makedirs(parent, exist_ok=True)
 
-    # Import ORM models here (once they exist) so metadata knows about them
-    # before create_all. Kept empty for the infra-only scaffold.
+    # Import ORM models so their tables register on Base.metadata before create_all.
+    from app import store  # noqa: F401
+
     Base.metadata.create_all(bind=engine)
 
 

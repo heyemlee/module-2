@@ -1,0 +1,42 @@
+# Standard cabinet library (rules-as-data).
+#
+# One entry per supported cabinet TYPE. The decomposition geometry lives in
+# app/engine.py (the formulas of ai_ctx §17.3); this file declares which parts
+# each type has and the default shelf counts when the order does not specify
+# them. Edit rules here, not code. `code_prefix_to_type` maps the leading letter
+# of a cabinet_code (e.g. B302435 -> base) for support checks.
+
+version: 1
+
+code_prefix_to_type:
+  B: base
+  W: wall
+  T: tall
+
+cabinets:
+  base:
+    type: base
+    has_top: false
+    has_bottom: true
+    stretchers: 2
+    default_adjustable_shelves: 1
+    default_fixed_shelves: 0
+    can_auto_decompose: true
+
+  wall:
+    type: wall
+    has_top: true
+    has_bottom: true
+    stretchers: 0
+    default_adjustable_shelves: 2
+    default_fixed_shelves: 0
+    can_auto_decompose: true
+
+  tall:
+    type: tall
+    has_top: true
+    has_bottom: true
+    stretchers: 0
+    default_adjustable_shelves: 4
+    default_fixed_shelves: 1
+    can_auto_decompose: true
