@@ -139,40 +139,37 @@
 
   <!-- 0: 说明 -->
   <div class="card guide">
-    <div class="ttl"><span class="num">?</span>使用说明 · 名词解释</div>
-    <p class="lead">这个系统把<b>销售/设计给的粗略柜体清单</b>,自动变成<b>车间能直接上锯的板件和裁切程序</b>。三步走:</p>
+    <div class="ttl"><span class="num">?</span>快速上手</div>
     <div class="steps">
-      <div class="stepc"><div><span class="n">1</span><span class="h">选一个厨房</span></div>
-        <div class="d">下面「Module 1 输出」换示例——这是设计端给的粗估柜体:有柜型、尺寸,但还没选材、没审批。</div></div>
-      <div class="stepc"><div><span class="n">2</span><span class="h">补全到生产订单</span></div>
-        <div class="d">选柜体材料、门板 finish、勾选三方审批。这是进生产的闸门,缺一不可。</div></div>
-      <div class="stepc"><div><span class="n">3</span><span class="h">提交给 Module 2</span></div>
-        <div class="d">点按钮,下面出三个视图:① 机台程序(上锯用) ② 图纸 ③ 板件 BOM。</div></div>
+      <div class="stepc"><div><span class="n">1</span><span class="h">选厨房</span></div>
+        <div class="d">换示例柜体清单（Module 1 粗估输出，无材料、无审批）。</div></div>
+      <div class="stepc"><div><span class="n">2</span><span class="h">补材料 / 审批</span></div>
+        <div class="d">选板材、门板，勾三方审批——缺一不可。</div></div>
+      <div class="stepc"><div><span class="n">3</span><span class="h">提交 → 看程序</span></div>
+        <div class="d">机台程序 / 图纸 / BOM 三个视图，切换少翻板 · 省料两个方案。</div></div>
     </div>
     <details>
-      <summary>展开名词解释(开条 / 横切 / 翻板 / 少翻板·省料 / SET·WIDTH·SURP …)</summary>
+      <summary>名词 · 字段说明</summary>
       <div class="gloss">
-        <div class="gcat">裁切两刀</div>
-        <div class="gitem"><b>开条</b> <span class="en">rip 纵切</span><br>顺着大板切成等宽的长条 → 定每件的<b>宽</b>。</div>
-        <div class="gitem"><b>横切</b> <span class="en">crosscut</span><br>把长条横切成一段段 → 定每件的<b>长</b>。</div>
-        <div class="gitem"><b>翻板</b><br>料转 90° 换切割方向。单锯一次只切一个方向,每换方向就要人翻一次 = 人工成本。</div>
-        <div class="gcat">两个切割方案(可切换)</div>
-        <div class="gitem"><b>少翻板</b><br>开条→横切只翻 1 次,最省人工,最贴合你的单推锯;个别板利用率略低。</div>
-        <div class="gitem"><b>省料</b><br>在 2 段/3 段切里挑最省板的;只有拼宽真能省板时才多翻 1 次,否则与少翻板相同。</div>
-        <div class="gitem"><b>翻板/张</b><br>每张板要翻几次的指标——越小越省人工。</div>
-        <div class="gcat">机台程序字段(对应你机器屏幕)</div>
-        <div class="gitem"><b>SET</b><br>一套程序,对应屏上一个画面(最多 10 行)。</div>
-        <div class="gitem"><b>WIDTH</b><br>这条料的宽度(横切时填)。</div>
-        <div class="gitem"><b>料长 / LENGTH</b><br>喂入料的长 / 要切出的尺寸。</div>
-        <div class="gitem"><b>QTY</b><br>这个尺寸要切几件。</div>
-        <div class="gitem"><b>TRIM</b><br>切头/修边量(以机台实测为准)。</div>
-        <div class="gitem"><b>SURP</b><br>这条切完剩下的余料。</div>
+        <div class="gcat">两刀</div>
+        <div class="gitem"><b>开条</b> <span class="en">rip</span> 纵切 → 定宽</div>
+        <div class="gitem"><b>横切</b> <span class="en">crosscut</span> 横切 → 定长</div>
+        <div class="gitem"><b>翻板</b> 料转 90° 换切向 = 人工成本，越少越好</div>
+        <div class="gcat">两方案</div>
+        <div class="gitem"><b>少翻板</b> 1 翻，省人工，最贴合单推锯</div>
+        <div class="gitem"><b>省料</b> 2/3 段取最省板数，不比少翻板差</div>
+        <div class="gitem"><b>翻板/张</b> 每张板翻几次，越小越省</div>
+        <div class="gcat">机台字段</div>
+        <div class="gitem"><b>SET</b> 一屏程序，最多 10 行</div>
+        <div class="gitem"><b>WIDTH</b> 条宽</div>
+        <div class="gitem"><b>LENGTH</b> 件长</div>
+        <div class="gitem"><b>QTY</b> 件数</div>
+        <div class="gitem"><b>TRIM</b> 切头量（以机台实测为准）</div>
+        <div class="gitem"><b>SURP</b> 余料，可留库存</div>
         <div class="gcat">板材指标</div>
-        <div class="gitem"><b>整板</b><br>新开的一整张标准板。</div>
-        <div class="gitem"><b>利用率</b><br>排上去的板件面积 ÷ 用掉的板面积。</div>
-        <div class="gitem"><b>余料 / 余料带</b><br>切剩、够大可回收的料;图纸里绿虚线=可回收,灰虚线=废料。</div>
-        <div class="gitem"><b>图案 / 堆叠</b><br>同一种排版叫一个图案;相同图案的板可叠几张一起切(book)。</div>
-        <div class="gitem"><b>封边</b><br>给板边贴封边条的边。</div>
+        <div class="gitem"><b>整板</b> 新开标准板</div>
+        <div class="gitem"><b>利用率</b> 排版面积 ÷ 用板面积</div>
+        <div class="gitem"><b>余料带</b> 绿虚线=可回收，灰虚线=废料</div>
       </div>
     </details>
   </div>
