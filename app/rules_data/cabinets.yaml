@@ -1,42 +1,181 @@
-# Standard cabinet library (rules-as-data).
+# Standard cabinet library + decomposition rules (rules-as-data).
 #
-# One entry per supported cabinet TYPE. The decomposition geometry lives in
-# app/engine.py (the formulas of ai_ctx §17.3); this file declares which parts
-# each type has and the default shelf counts when the order does not specify
-# them. Edit rules here, not code. `code_prefix_to_type` maps the leading letter
-# of a cabinet_code (e.g. B302435 -> base) for support checks.
+#   - constants        : shared dimensions (panel thickness, grooves, edge band...)
+#   - part_catalog     : per-part geometry FORMULAS over W/D/H + vr + constants
+#   - cabinets         : one entry per CARCASS type = which parts + quantities + vr
+#   - code_families    : real cabinet-code prefix -> carcass type (longest prefix wins)
+#   - blocked_families : code prefixes that CANNOT auto-decompose, with the reason
+#
+# Formulas are evaluated by app/formula.py (safe arithmetic only). Variables in scope:
+#   W, D, H            external cabinet width / depth / height (mm, already rounded)
+#   vr                 vertical reduction for this type (wall = 2, else 0)
+#   t, g, eb, ...      the constants below
+#
+# Real cabinet codes (from kabi-console standard-cabinets.json) resolve to a carcass
+# via `code_families` by longest matching prefix; corners/appliance/open-shelf families
+# resolve to a blocker via `blocked_families`. Anything unmatched falls back to the
+# order's `type` field, then to an unsupported blocker. Doors and drawers are
+# referenced-only (ai_ctx §17.1), so they add no box panels here.
 
-version: 1
+version: 3
 
+# Single-letter fallback for the "did you mean" hint on unsupported codes.
 code_prefix_to_type:
   B: base
   W: wall
   T: tall
+  S: sink_base
 
+# Shared dimensions (mm). Values confirmed against the factory Salice item list
+# (C26061, 标准柜信息 area formulas), 2026-06-17.
+constants:
+  t: 18.0              # panel (box) thickness
+  g: 3.0               # back-panel groove depth per side
+  eb: 1.0              # edge-band thickness allowance
+  adj_setback: 20.0    # adjustable shelf front setback
+  stretcher_depth: 76.2   # 3" — Salice 顶板=W×3 (was 4"/101.6)
+
+# Part geometry: finished length/width feed the BOM; cut_* (edge-band allowance
+# removed) feed actual cutting. edges = front | all | none.
+part_catalog:
+  side:
+    length: "H"
+    width: "D"
+    cut_length: "H - vr"
+    cut_width: "D - eb"
+    edges: front
+  top:
+    length: "W - 2*t"
+    width: "D - t"
+    cut_length: "W - 2*t"
+    cut_width: "D - t - eb"
+    edges: front
+  bottom:
+    length: "W - 2*t"
+    width: "D - t"
+    cut_length: "W - 2*t"
+    cut_width: "D - t - eb"
+    edges: front
+  back:
+    # Salice: 背板 = W × (H − 4.5") for base/tall (toe-kick + rail = tkr); wall keeps
+    # full height (tkr = 0). Width still rides into the side grooves (+2g).
+    length: "H - tkr"
+    width: "W - 2*t + 2*g"
+    cut_length: "H - tkr - vr"
+    cut_width: "W - 2*t + 2*g"
+    edges: none
+  stretcher:
+    length: "W - 2*t"
+    width: "stretcher_depth"
+    cut_length: "W - 2*t"
+    cut_width: "stretcher_depth"
+    edges: none
+  adjustable_shelf:
+    length: "W - 2*t"
+    width: "D - t - adj_setback"
+    cut_length: "W - 2*t - 2*eb"
+    cut_width: "D - t - adj_setback - 2*eb"
+    edges: all
+  fixed_shelf:
+    length: "W - 2*t"
+    width: "D - t"
+    cut_length: "W - 2*t"
+    cut_width: "D - t - eb"
+    edges: front
+
+# Carcass types. qty is a fixed integer, or the name of an order field
+# (adjustable_shelves / fixed_shelves) with `default` used when the order omits it.
 cabinets:
   base:
-    type: base
-    has_top: false
-    has_bottom: true
-    stretchers: 2
-    default_adjustable_shelves: 1
-    default_fixed_shelves: 0
+    vr: 0.0
+    tkr: 114.3            # 4.5" toe-kick + rail (back is shorter than the sides)
     can_auto_decompose: true
+    parts:
+      - {part: side, qty: 2}
+      - {part: bottom, qty: 1}
+      - {part: back, qty: 1}
+      - {part: stretcher, qty: 2}
+      - {part: adjustable_shelf, qty: adjustable_shelves, default: 1}
 
   wall:
-    type: wall
-    has_top: true
-    has_bottom: true
-    stretchers: 0
-    default_adjustable_shelves: 2
-    default_fixed_shelves: 0
+    vr: 2.0
+    tkr: 0.0             # wall cabinets have no toe-kick; back is full height
     can_auto_decompose: true
+    parts:
+      - {part: side, qty: 2}
+      - {part: top, qty: 1}
+      - {part: bottom, qty: 1}
+      - {part: back, qty: 1}
+      - {part: adjustable_shelf, qty: adjustable_shelves, default: 2}
 
   tall:
-    type: tall
-    has_top: true
-    has_bottom: true
-    stretchers: 0
-    default_adjustable_shelves: 4
-    default_fixed_shelves: 1
+    vr: 0.0
+    tkr: 114.3           # tall is a floor cabinet -> toe-kick + rail like base
     can_auto_decompose: true
+    parts:
+      - {part: side, qty: 2}
+      - {part: top, qty: 1}
+      - {part: bottom, qty: 1}
+      - {part: back, qty: 1}
+      - {part: adjustable_shelf, qty: adjustable_shelves, default: 4}
+      - {part: fixed_shelf, qty: fixed_shelves, default: 1}
+
+  # Sink base — DISABLED. The kabi-console docs (C26061 Salice 物料清单 notes) show the
+  # real construction is NOT a simple "base minus bottom": the back is CUT OUT for
+  # plumbing (margins bottom 3" / sides 4-6" / top 8"), plus a 6" front sink filler
+  # panel, a 4" toe-kick, and no bottom. That construction also differs from §17.3
+  # (toe-kick, cut-out back, 15+18mm mix) and the kabi cut rules are themselves 待确认.
+  # Leave disabled until the factory gives sink-base parts in §17.3 terms. The parts
+  # below are a PLACEHOLDER only (never reached while can_auto_decompose is false).
+  sink_base:
+    vr: 0.0
+    can_auto_decompose: false
+    parts:
+      - {part: side, qty: 2}
+      - {part: back, qty: 1}
+      - {part: stretcher, qty: 2}
+
+# Real cabinet-code prefix -> carcass type. Longest matching prefix wins, so e.g.
+# WBF -> wall but WBC -> blocked. Drawers/doors don't change the box, so drawer/
+# cooktop/trash/spice/vanity bases all use the base carcass (shelf counts come from
+# the order's adjustable_shelves/fixed_shelves).
+code_families:
+  # base carcass (h~34.5; vanity families run at d~21, depth comes from the order)
+  FDB: base       # full-height door base
+  DRB: base       # drawer base (door + drawer + shelf)
+  DB: base        # multi-drawer base
+  CDB: base       # cooktop / slide-in base
+  TCFDB: base     # trash-can door base
+  TCDRB: base     # trash-can drawer base
+  SPB: base       # spice rack base
+  V: base         # vanity drawer base
+  VF: base        # floated vanity base
+  VFB: base       # vanity door base
+  # sink base (no bottom) — resolves to the disabled sink_base type above
+  FDRSB: sink_base
+  DRSB: sink_base
+  VSB: sink_base  # vanity sink base
+  # wall carcass (d~12)
+  W: wall         # wall cabinet
+  WBF: wall       # wall bi-fold
+  WSL: wall       # wall single lift
+  # tall carcass (h>=60)
+  TP: tall        # pantry / tall
+
+# Code prefixes that cannot auto-decompose (non-rectangular / appliance / open).
+blocked_families:
+  BCB: "blind corner base — non-rectangular, needs manual layout"
+  LSCB: "lazy-susan corner — non-rectangular"
+  WBC: "wall blind corner — non-rectangular"
+  WAC: "wall angle corner — non-rectangular"
+  WDC: "wall diagonal corner — non-rectangular"
+  CSB: "diagonal corner sink base — non-rectangular"
+  WOS: "wall open shelf — open carcass, no door/back"
+  OSB: "open shelf base — open carcass"
+  ESB: "end shelf base — open / angled"
+  WES: "wall end shelf — open / angled"
+  SO: "single oven cabinet — appliance openings"
+  DO: "double oven cabinet — appliance openings"
+  RFW: "refrigerator wall — appliance enclosure"
+  WM: "wall microwave — appliance opening"
+  MB: "microwave base — appliance opening"

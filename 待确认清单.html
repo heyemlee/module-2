@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 2 · 裁切构造待确认清单</title>
+<style>
+  :root{
+    --ink:#1f2328; --muted:#646b73; --line:#e2e5e9; --bg:#ffffff; --soft:#f6f7f9;
+    --accent:#2f6f4f; --accent-soft:#e8f3ec;
+    --warn:#9a5b00; --warn-soft:#fdf3e3;
+    --stop:#9a2f2f; --stop-soft:#fbecec;
+    --ask-you:#2f5f9a; --ask-co:#7a4fa3;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--soft); color:var(--ink);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  .wrap{max-width:880px; margin:0 auto; padding:32px 22px 64px}
+  header.doc{border-bottom:2px solid var(--ink); padding-bottom:16px; margin-bottom:8px}
+  header.doc h1{font-size:24px; margin:0 0 6px; letter-spacing:.2px}
+  header.doc .sub{color:var(--muted); font-size:13.5px}
+  header.doc .meta{margin-top:10px; font-size:12.5px; color:var(--muted)}
+  header.doc .meta code{background:var(--soft); padding:1px 6px; border-radius:4px; font-size:12px}
+
+  .legend{display:flex; gap:8px; flex-wrap:wrap; margin:18px 0 26px}
+  .tag{display:inline-block; font-size:12px; padding:2px 9px; border-radius:999px; font-weight:600; white-space:nowrap}
+  .tag.you{background:#eaf1fb; color:var(--ask-you)}
+  .tag.co{background:#f1eafb; color:var(--ask-co)}
+  .tag.block{background:var(--stop-soft); color:var(--stop)}
+  .tag.soft{background:var(--soft); color:var(--muted); font-weight:500}
+
+  section{background:var(--bg); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:0 0 18px;
+    box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  section > h2{font-size:17px; margin:0 0 4px; display:flex; align-items:center; gap:10px}
+  section > h2 .num{display:inline-flex; align-items:center; justify-content:center; min-width:26px; height:26px;
+    background:var(--ink); color:#fff; border-radius:7px; font-size:14px; font-weight:700}
+  section > .lead{color:var(--muted); font-size:13.5px; margin:2px 0 14px}
+
+  .critical{border:2px solid var(--accent); background:var(--accent-soft)}
+  .critical > h2 .num{background:var(--accent)}
+
+  table{width:100%; border-collapse:collapse; margin:6px 0 4px; font-size:13.5px}
+  th,td{border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top}
+  th{background:var(--soft); font-weight:600; font-size:12.5px; color:var(--muted)}
+  td .clue{color:var(--muted); font-size:12.5px}
+
+  .opt{display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid var(--line);
+    border-radius:9px; background:#fff; margin:8px 0}
+  .opt .box{flex:0 0 auto; width:18px; height:18px; border:2px solid var(--muted); border-radius:4px; margin-top:2px}
+  .opt b{font-size:14.5px}
+  .opt .d{color:var(--muted); font-size:13px}
+
+  .q{display:flex; gap:11px; padding:11px 0; border-top:1px dashed var(--line)}
+  .q:first-of-type{border-top:none}
+  .q .ck{flex:0 0 auto; width:17px; height:17px; border:2px solid var(--muted); border-radius:4px; margin-top:3px}
+  .q .body{flex:1}
+  .q .body .t{font-weight:600}
+  .q .body .clue{color:var(--muted); font-size:12.5px; margin-top:2px}
+  .answer{margin-top:7px; border:1px dashed #c7ccd2; border-radius:7px; min-height:34px; padding:6px 9px;
+    background:#fcfcfd; color:#9aa0a6; font-size:12px}
+
+  .note{font-size:12.5px; color:var(--muted); background:var(--soft); border-left:3px solid var(--line);
+    padding:8px 12px; border-radius:0 6px 6px 0; margin:10px 0 0}
+  .blocks{font-size:12px; color:var(--stop); font-weight:600}
+
+  footer.doc{margin-top:26px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:12.5px}
+
+  @media print{
+    body{background:#fff}
+    .wrap{padding:0 6px}
+    section{box-shadow:none; break-inside:avoid; page-break-inside:avoid}
+    .critical{border-color:#000}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <h1>Module 2 · 裁切构造待确认清单</h1>
+  <div class="sub">把柜体拆成板件、算下料尺寸之前，需要公司 / 设计师 / 工艺拍板的点。</div>
+  <div class="meta">
+    日期：2026-06-17 ·
+    来源：<code>module-2/ai_ctx.md §17.3</code>、<code>kabi-console 待确认 §B/§D</code>、<code>C26061 Salice 物料清单</code>
+  </div>
+</header>
+
+<div class="legend">
+  <span class="tag you">你 / 老板可定</span>
+  <span class="tag co">需公司 / 工艺给数</span>
+  <span class="tag block">卡住下料</span>
+  <span class="tag soft">填写区 = 虚线框</span>
+</div>
+
+<!-- 0 -->
+<section class="critical">
+  <h2><span class="num">0</span>先定总方向<span class="tag you">你 / 老板可定</span></h2>
+  <p class="lead">这是最关键的一项。不定它，下面 1–2 都没法做。<b>箱体构造到底用哪套？</b></p>
+
+  <div class="opt">
+    <div class="box"></div>
+    <div>
+      <b>A · §17.3 那套</b>（无踢脚 · 整块背板嵌 3mm 槽 · 统一 18mm 板）
+      <div class="d">就是现在 module-2 在用的。base / wall / tall 已验证、能跑。kabi 只当作"另一个工厂的数据"。</div>
+    </div>
+  </div>
+  <div class="opt">
+    <div class="box"></div>
+    <div>
+      <b>B · kabi 真实订单那套</b>（4″ 踢脚 · 背板缩进/挖洞 · 15+18mm 混用）
+      <div class="d">若选这套，§17.3 的箱体公式要按踢脚 / 挖洞背板 / 混合板厚重做——而这套 kabi 自己也还没确认（见第 1 节）。</div>
+    </div>
+  </div>
+  <div class="note">两套裁切尺寸不一样，<b>不能混</b>。选 A：跳过第 1 节，只需第 2、3 节确认即可继续加柜型。选 B：得先把第 1 节那七条数要齐。</div>
+</section>
+
+<!-- 1 -->
+<section>
+  <h2><span class="num">1</span>七条构造 mm 规则<span class="tag co">需公司 / 工艺给数</span></h2>
+  <p class="lead">来自 kabi <code>待确认 §D</code>——kabi 自己也标着"⏳待确认、引擎不能臆造"。走方向 B、或要和 kabi 对齐时需要。</p>
+  <table>
+    <thead><tr><th style="width:26px">✓</th><th>规则</th><th>文档线索</th><th>卡住</th></tr></thead>
+    <tbody>
+      <tr><td>☐</td><td>背板嵌入 / 缩进量</td><td class="clue">C26224 实测 30mm（≠ 2×板厚 36mm）</td><td class="clue">背板下料</td></tr>
+      <tr><td>☐</td><td>层板缩进 setback</td><td class="clue">只有数量、无尺寸</td><td class="clue">层板下料</td></tr>
+      <tr><td>☐</td><td>抽屉面 reveal / 缝隙</td><td class="clue">C26224 实测 10–12mm 不一致</td><td class="clue">抽屉面 *</td></tr>
+      <tr><td>☐</td><td>门板 W×H + 盖板 / 缝隙</td><td class="clue">只有门板总面积</td><td class="clue">门板 *</td></tr>
+      <tr><td>☐</td><td>顶板：整板 vs 前后拉条</td><td class="clue">疑地柜用拉条、TP 高柜用整顶板</td><td class="clue">顶 / 底构造</td></tr>
+      <tr><td>☐</td><td>踢脚高度</td><td class="clue">反推 ~4″（34.5−30.5）</td><td class="clue">侧板 / 背板净高</td></tr>
+      <tr><td>☐</td><td>各部位默认板厚</td><td class="clue">C26224 用 15mm + 18mm</td><td class="clue">所有板件厚度</td></tr>
+    </tbody>
+  </table>
+  <div class="note">* module-2 里<b>门板、抽屉盒只引用不生产</b>，所以"抽屉面""门板"两条对 module-2 可先不管。</div>
+  <div class="answer">公司给的数（七条）写这里：</div>
+</section>
+
+<!-- 2 -->
+<section>
+  <h2><span class="num">2</span>水槽柜专项<span class="tag co">需公司 / 工艺给数</span></h2>
+  <p class="lead">C26061 的 FDRSB 备注显示真实构造，要启用 <code>sink_base</code> 必须确认成部件表。</p>
+
+  <div class="q"><div class="ck"></div><div class="body">
+    <div class="t">底板：确认是<b>没有底板</b>？</div>
+    <div class="clue">水槽柜走下水管，标准做法无底板。</div>
+    <div class="answer">　</div>
+  </div></div>
+
+  <div class="q"><div class="ck"></div><div class="body">
+    <div class="t">背板挖洞：下留 3″、左右 4–6″、上留 8″</div>
+    <div class="clue">C26061 备注（24″柜左右留 4″，30″+ 留 6″）。问题：module-2 要不要把"挖洞"建模，还是先当整块背板 + 文字备注？</div>
+    <div class="answer">　</div>
+  </div></div>
+
+  <div class="q"><div class="ck"></div><div class="body">
+    <div class="t">6″ 封板：前上方挡水盆的那块</div>
+    <div class="clue">算一个独立部件吗？尺寸 = 柜宽 × 6″？</div>
+    <div class="answer">　</div>
+  </div></div>
+
+  <div class="q"><div class="ck"></div><div class="body">
+    <div class="t">踢脚 4″ + 门数（1 或 2）</div>
+    <div class="clue">踢脚影响侧板/背板净高；门只引用不生产。</div>
+    <div class="answer">　</div>
+  </div></div>
+
+  <div class="note">最好直接给一张 <b>§17.3 式部件表</b>：部件 / 数量 / 成品 Length×Width / cut 尺寸 / 封边。</div>
+</section>
+
+<!-- 3 -->
+<section>
+  <h2><span class="num">3</span>柜型映射 sanity-check<span class="tag you">你 / 老板可定</span></h2>
+  <p class="lead">我把真实系列这样映射到 module-2 的箱体类型，请确认对不对。</p>
+  <table>
+    <thead><tr><th style="width:26px">✓</th><th>系列</th><th>我映射成</th><th>要确认</th></tr></thead>
+    <tbody>
+      <tr><td>☐</td><td>FDB · DRB · DB · CDB · TCFDB · TCDRB · SPB</td><td><b>base</b></td><td class="clue">箱体都 = 普通底柜（侧+底+背+2拉条+层板）？</td></tr>
+      <tr><td>☐</td><td>V · VF · VFB（vanity，深 21″）</td><td><b>base</b></td><td class="clue">浴室柜箱体 = 底柜，只是深度不同？</td></tr>
+      <tr><td>☐</td><td>W · WBF · WSL</td><td><b>wall</b></td><td class="clue">都按墙柜（顶+底+背）？</td></tr>
+      <tr><td>☐</td><td>TP</td><td><b>tall</b></td><td class="clue">高柜？</td></tr>
+      <tr><td>☐</td><td>BCB · LSCB · WBC · WAC · WDC · CSB（转角）</td><td><span class="tag block">block</span></td><td class="clue">转角都人工排、不自动拆？</td></tr>
+      <tr><td>☐</td><td>SO · DO（烤箱）· WOS · OSB · ESB · WES（开放层架）· RFW · WM · MB（电器）</td><td><span class="tag block">block</span></td><td class="clue">这些不自动拆？</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 4 -->
+<section>
+  <h2><span class="num">4</span>命名 / 编码<span class="tag co">需公司确认</span></h2>
+  <p class="lead">来自 kabi <code>待确认 §B</code>，影响柜码识别。</p>
+  <div class="q"><div class="ck"></div><div class="body">
+    <div class="t">后缀 T / L / R 含义？</div>
+    <div class="clue">疑：T = 标准 / 两门，L / R = 左右开门。</div>
+    <div class="answer">　</div>
+  </div></div>
+  <div class="q"><div class="ck"></div><div class="body">
+    <div class="t">数字后两位 ↔ 实际高度，有无固定换算？</div>
+    <div class="clue">如 IP5035 实为 55½ × 34½，名义≠实际。</div>
+    <div class="answer">　</div>
+  </div></div>
+</section>
+
+<!-- 5 -->
+<section>
+  <h2><span class="num">5</span>module-2 小项复核<span class="tag you">你 / 老板可定</span></h2>
+  <div class="q"><div class="ck"></div><div class="body">
+    <div class="t">BOM 输出单位 = mm ✅（已定，复核）</div>
+    <div class="answer">　</div>
+  </div></div>
+  <div class="q"><div class="ck"></div><div class="body">
+    <div class="t">层板数量来源</div>
+    <div class="clue">现在从订单输入取、缺省回落 YAML 默认值。行不行？还是要从标准柜体库按柜码查？</div>
+    <div class="answer">　</div>
+  </div></div>
+</section>
+
+<footer class="doc">
+  最关键是第 0 项 —— 先定走 A 还是 B。<br>
+  走 A：只需第 2、3 节确认就能继续加柜型。走 B：先找公司把第 1 节七条数要齐。<br>
+  确认结果填在各虚线框，回传即可。
+</footer>
+
+</div>
+</body>
+</html>

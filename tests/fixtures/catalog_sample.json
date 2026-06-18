@@ -1,0 +1,26 @@
+[
+  {"code": "FDB36T",   "type": "base", "w": 36, "d": 24, "h": 34.5, "material": "plywood-3/4", "expect": "ready"},
+  {"code": "SPB12",    "type": "base", "w": 12, "d": 24, "h": 34.5, "material": "plywood-3/4", "expect": "ready"},
+  {"code": "CDB30",    "type": "base", "w": 30, "d": 24, "h": 34.5, "material": "plywood-3/4", "expect": "ready"},
+  {"code": "TCFDB15",  "type": "base", "w": 15, "d": 24, "h": 34.5, "material": "plywood-3/4", "expect": "ready"},
+  {"code": "1DRB12L",  "type": "base", "w": 12, "d": 24, "h": 34.5, "material": "plywood-3/4", "expect": "ready"},
+  {"code": "V2DB12",   "type": "base", "w": 12, "d": 21, "h": 34.5, "material": "plywood-3/4", "expect": "ready"},
+  {"code": "W3012L",   "type": "wall", "w": 30, "d": 12, "h": 30,   "material": "plywood-3/4", "expect": "ready"},
+  {"code": "WBF2430",  "type": "wall", "w": 24, "d": 12, "h": 30,   "material": "plywood-3/4", "expect": "ready"},
+  {"code": "TP1272L",  "type": "tall", "w": 12, "d": 24, "h": 72,   "material": "plywood-3/4", "expect": "ready"},
+  {"code": "B302435",  "type": "base", "w": 30, "d": 24, "h": 34.5, "material": "Cleaf-LR22-19mm", "expect": "ready"},
+
+  {"code": "FDRSB30T", "type": "base", "w": 30, "d": 24, "h": 34.5, "material": "plywood-3/4", "expect": "blocked", "blocker": "UNSUPPORTED_CABINET_CODE", "reason": "not yet confirmed"},
+  {"code": "DRSB18",   "type": "base", "w": 18, "d": 24, "h": 34.5, "material": "plywood-3/4", "expect": "blocked", "blocker": "UNSUPPORTED_CABINET_CODE", "reason": "not yet confirmed"},
+  {"code": "BCB36R",   "type": "base", "w": 36, "d": 24, "h": 34.5, "material": "plywood-3/4", "expect": "blocked", "blocker": "UNSUPPORTED_CABINET_CODE", "reason": "corner"},
+  {"code": "LSCB36L",  "type": "base", "w": 36, "d": 24, "h": 34.5, "material": "plywood-3/4", "expect": "blocked", "blocker": "UNSUPPORTED_CABINET_CODE", "reason": "corner"},
+  {"code": "SO2484",   "type": "tall", "w": 24, "d": 24, "h": 84,   "material": "plywood-3/4", "expect": "blocked", "blocker": "UNSUPPORTED_CABINET_CODE", "reason": "oven"},
+  {"code": "DO2484",   "type": "tall", "w": 24, "d": 24, "h": 84,   "material": "plywood-3/4", "expect": "blocked", "blocker": "UNSUPPORTED_CABINET_CODE", "reason": "oven"},
+  {"code": "WOS0912",  "type": "wall", "w": 9,  "d": 12, "h": 12,   "material": "plywood-3/4", "expect": "blocked", "blocker": "UNSUPPORTED_CABINET_CODE", "reason": "open"},
+  {"code": "OSB0934",  "type": "base", "w": 9,  "d": 24, "h": 34.5, "material": "plywood-3/4", "expect": "blocked", "blocker": "UNSUPPORTED_CABINET_CODE", "reason": "open"},
+  {"code": "RFW3012",  "type": "wall", "w": 30, "d": 24, "h": 12,   "material": "plywood-3/4", "expect": "blocked", "blocker": "UNSUPPORTED_CABINET_CODE", "reason": "refrigerator"},
+  {"code": "WM3030",   "type": "wall", "w": 30, "d": 12, "h": 30,   "material": "plywood-3/4", "expect": "blocked", "blocker": "UNSUPPORTED_CABINET_CODE", "reason": "microwave"},
+
+  {"code": "B011224",  "type": "base", "w": 1,  "d": 24, "h": 34.5, "material": "plywood-3/4", "expect": "blocked", "blocker": "CABINET_NOT_MANUFACTURABLE", "reason": "too small"},
+  {"code": "B603524",  "type": "base", "w": 60, "d": 24, "h": 34.5, "material": "plywood-3/4", "expect": "blocked", "blocker": "CABINET_NOT_MANUFACTURABLE", "reason": "exceeds"}
+]

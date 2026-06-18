@@ -7,9 +7,12 @@ allowance removed) feed actual cutting. Phase A produces a grouped cut list;
 the stack_efficiency nesting is Phase B.
 """
 
+from app.boards import get_board_config
+from app.cutting import build_cutting_plan
+from app.formula import evaluate
 from app.ids import cabinet_instance_id, panel_id
 from app.responses import Blocker
-from app.rules import get_library
+from app.rules import TypePart, get_library
 from app.schemas import (
     ApprovedCabinetOrderPackage,
     CabinetRecord,
@@ -20,22 +23,17 @@ from app.schemas import (
     ProductionEngineeringPackage,
 )
 
-# ---- Global constants (mm), ai_ctx §17.3 ----
+# ---- Global constants (mm). Geometry constants live in cabinets.yaml now. ----
 INCHES_TO_MM = 25.4
-T = 18.0                 # panel thickness
-GROOVE = 3.0            # back-panel groove per side (g)
-EDGE_BAND = 1.0        # edge banding thickness (eb)
-ADJ_SHELF_SETBACK = 20.0
-STRETCHER_DEPTH = 101.6  # 4"
-WALL_VERTICAL_REDUCTION = 2.0  # vr, wall only
-
 SHEET_SIZE = "1219.2x2438.4"
 BANDING = "matching"
 
-# Edge banding edge-sets
-_FRONT = ["front"]
-_ALL = ["front", "back", "left", "right"]
-_NONE: list[str] = []
+# part_catalog `edges:` name -> banded edges.
+EDGE_SETS: dict[str, list[str]] = {
+    "front": ["front"],
+    "all": ["front", "back", "left", "right"],
+    "none": [],
+}
 
 
 def r1(value: float) -> float:
@@ -55,6 +53,7 @@ def _part(
     cut_length: float,
     cut_width: float,
     edges: list[str],
+    thickness: float,
 ) -> dict:
     return {
         "name": name,
@@ -64,7 +63,42 @@ def _part(
         "cut_length": r1(cut_length),
         "cut_width": r1(cut_width),
         "edges": edges,
+        "thickness": r1(thickness),
     }
+
+
+def _resolve_qty(tp: TypePart, qty_fields: dict[str, int | None]) -> int:
+    """A fixed integer, or an order field (with the part's default when omitted)."""
+    if isinstance(tp.qty, int):
+        return tp.qty
+    value = qty_fields.get(tp.qty)
+    return tp.default if value is None else value
+
+
+def _infeasible_reason(
+    specs: list[dict], usable_width: float, sheet_length: float
+) -> str | None:
+    """Why a cabinet's parts can't be cut, or None. Guards against silently emitting
+    physically-invalid panels (a cabinet too small -> non-positive dims; a panel wider
+    than the stock sheet -> can't nest, would overflow). Pure check over the formulas."""
+    for s in specs:
+        for dim in ("length", "width", "cut_length", "cut_width"):
+            if s[dim] <= 0:
+                return (
+                    f"part '{s['name']}' has non-positive {dim} ({s[dim]}mm) — "
+                    "cabinet too small to decompose"
+                )
+        if s["cut_width"] > usable_width:
+            return (
+                f"part '{s['name']}' cut width {s['cut_width']}mm exceeds usable "
+                f"sheet width {usable_width}mm"
+            )
+        if s["cut_length"] > sheet_length:
+            return (
+                f"part '{s['name']}' cut length {s['cut_length']}mm exceeds "
+                f"sheet length {sheet_length}mm"
+            )
+    return None
 
 
 def decompose(
@@ -72,84 +106,55 @@ def decompose(
     width_mm: float,
     depth_mm: float,
     height_mm: float,
-    adjustable_shelves: int,
-    fixed_shelves: int,
+    adjustable_shelves: int | None,
+    fixed_shelves: int | None,
 ) -> list[dict]:
-    """Return part specs for one cabinet (quantities are per-part, not expanded).
+    """Return part specs for one cabinet from the data-driven rules (rules.py / YAML).
 
-    Caller is responsible for type support; this assumes a known type and applies
-    the §17.3 table. W/D/H are external dimensions in mm.
+    Quantities are per-part (not expanded). Caller checks type support. All geometry
+    comes from the `part_catalog` formulas — nothing here is cabinet-type-specific, so
+    new types are added in YAML, not here. W/D/H are external dimensions in mm.
     """
-    W, D, H = width_mm, depth_mm, height_mm
-    vr = WALL_VERTICAL_REDUCTION if cabinet_type == "wall" else 0.0
     lib = get_library()
     rule = lib.rule_for_type(cabinet_type)
     assert rule is not None  # support checked by caller
 
+    namespace: dict[str, float] = {
+        "W": width_mm,
+        "D": depth_mm,
+        "H": height_mm,
+        "vr": rule.vr,
+        "tkr": rule.tkr,
+        **lib.constants,
+    }
+    t_default = lib.constants["t"]
+    qty_fields = {
+        "adjustable_shelves": adjustable_shelves,
+        "fixed_shelves": fixed_shelves,
+    }
+
     parts: list[dict] = []
-
-    # Side x2: finished H x D ; cut (H-vr) x (D-eb) ; front edge
-    parts.append(_part("side", 2, H, D, H - vr, D - EDGE_BAND, _FRONT))
-
-    # Top (wall/tall): finished (W-2t) x (D-t) ; cut x (D-t-eb) ; front
-    if rule.has_top:
-        parts.append(
-            _part("top", 1, W - 2 * T, D - T, W - 2 * T, D - T - EDGE_BAND, _FRONT)
-        )
-
-    # Bottom (all): same as top geometry
-    if rule.has_bottom:
-        parts.append(
-            _part("bottom", 1, W - 2 * T, D - T, W - 2 * T, D - T - EDGE_BAND, _FRONT)
-        )
-
-    # Back (all): finished H x (W-2t+2g) ; cut (H-vr) x (W-2t+2g) ; no edge
-    back_width = W - 2 * T + 2 * GROOVE
-    parts.append(_part("back", 1, H, back_width, H - vr, back_width, _NONE))
-
-    # Stretcher (base): finished (W-2t) x 101.6 ; cut same ; no edge
-    if rule.stretchers:
+    for tp in rule.parts:
+        qty = _resolve_qty(tp, qty_fields)
+        if qty <= 0:
+            continue
+        geom = lib.geometry_for(tp.part)
+        if geom is None:
+            raise KeyError(
+                f"cabinet type '{cabinet_type}' uses unknown part '{tp.part}'"
+            )
         parts.append(
             _part(
-                "stretcher",
-                rule.stretchers,
-                W - 2 * T,
-                STRETCHER_DEPTH,
-                W - 2 * T,
-                STRETCHER_DEPTH,
-                _NONE,
+                tp.part,
+                qty,
+                evaluate(geom.length, namespace),
+                evaluate(geom.width, namespace),
+                evaluate(geom.cut_length, namespace),
+                evaluate(geom.cut_width, namespace),
+                EDGE_SETS[geom.edges],
+                geom.thickness if geom.thickness is not None else t_default,
             )
         )
-
-    # Adjustable shelves: finished (W-2t) x (D-t-20) ; cut (W-2t-2eb) x (D-t-20-2eb) ; all edges
-    if adjustable_shelves > 0:
-        adj_w = D - T - ADJ_SHELF_SETBACK
-        parts.append(
-            _part(
-                "adjustable_shelf",
-                adjustable_shelves,
-                W - 2 * T,
-                adj_w,
-                W - 2 * T - 2 * EDGE_BAND,
-                adj_w - 2 * EDGE_BAND,
-                _ALL,
-            )
-        )
-
-    # Fixed shelves: same geometry as bottom ; front edge
-    if fixed_shelves > 0:
-        parts.append(
-            _part(
-                "fixed_shelf",
-                fixed_shelves,
-                W - 2 * T,
-                D - T,
-                W - 2 * T,
-                D - T - EDGE_BAND,
-                _FRONT,
-            )
-        )
-
     return parts
 
 
@@ -165,6 +170,8 @@ def engineer(
     blockers and the package status becomes `engineering_blocked`.
     """
     lib = get_library()
+    board = get_board_config()
+    eb_mm = lib.constants["eb"]
     cabinets: list[CabinetRecord] = []
     panels: list[PanelBOM] = []
     edge_banding: list[EdgeBandingItem] = []
@@ -172,17 +179,35 @@ def engineer(
 
     panel_seq = 0
     for ci, cab in enumerate(order.cabinets):
-        rule = lib.rule_for_type(cab.type)
+        # Resolve carcass from the real cabinet code (longest family prefix), falling
+        # back to the order's `type`. Corners/appliance/open-shelf carry their reason.
+        carcass_type, blocked_reason = lib.resolve_carcass(cab.cabinet_code, cab.type)
+        if blocked_reason is not None:
+            blockers.append(
+                Blocker(
+                    code="UNSUPPORTED_CABINET_CODE",
+                    owner="module2",
+                    field=f"cabinets[{ci}].cabinet_code",
+                    message=f"Cabinet '{cab.cabinet_code}': {blocked_reason}",
+                )
+            )
+            continue
+
+        rule = lib.rule_for_type(carcass_type) if carcass_type else None
         if rule is None or not rule.can_auto_decompose:
             inferred = lib.type_for_code(cab.cabinet_code)
+            reason = (
+                f"decomposition for type '{carcass_type}' is not yet confirmed"
+                if rule is not None
+                else f"no decomposition rule for cabinet type '{cab.type}'"
+            )
             blockers.append(
                 Blocker(
                     code="UNSUPPORTED_CABINET_CODE",
                     owner="module2",
                     field=f"cabinets[{ci}].cabinet_code",
                     message=(
-                        f"No decomposition rule for cabinet type '{cab.type}' "
-                        f"(code '{cab.cabinet_code}')"
+                        f"{reason} (code '{cab.cabinet_code}')"
                         + (f"; did you mean type '{inferred}'?" if inferred else "")
                     ),
                 )
@@ -190,14 +215,27 @@ def engineer(
             continue
 
         w_mm, d_mm, h_mm = to_mm(cab.width), to_mm(cab.depth), to_mm(cab.height)
-        adj = cab.adjustable_shelves
-        if adj is None:
-            adj = rule.default_adjustable_shelves
-        fixed = cab.fixed_shelves
-        if fixed is None:
-            fixed = rule.default_fixed_shelves
+        # Shelf counts default inside decompose() via each part's `default` in YAML.
+        specs = decompose(
+            carcass_type, w_mm, d_mm, h_mm, cab.adjustable_shelves, cab.fixed_shelves
+        )
 
-        specs = decompose(cab.type, w_mm, d_mm, h_mm, adj, fixed)
+        # Feasibility guard: don't emit non-positive or oversize panels to the saw.
+        # Check against this cabinet's material stock (a wide panel may fit larger stock).
+        mat_board = board.for_material(cab.material or "")
+        reason = _infeasible_reason(
+            specs, mat_board.usable_width, mat_board.sheet_length
+        )
+        if reason is not None:
+            blockers.append(
+                Blocker(
+                    code="CABINET_NOT_MANUFACTURABLE",
+                    owner="module2",
+                    field=f"cabinets[{ci}]",
+                    message=f"Cabinet '{cab.cabinet_code}': {reason}",
+                )
+            )
+            continue
 
         # Expand by quantity into independent cabinet instances.
         for n in range(1, cab.quantity + 1):
@@ -214,12 +252,12 @@ def engineer(
                         name=spec["name"],
                         length=spec["length"],
                         width=spec["width"],
-                        thickness=T,
+                        thickness=spec["thickness"],
                         cut_length=spec["cut_length"],
                         cut_width=spec["cut_width"],
                         quantity=spec["qty"],
-                        material=cab.material,
-                        finish=cab.finish,
+                        material=cab.material or "",
+                        finish=cab.finish or "",
                         grain_direction="length",
                         edge_banding=spec["edges"],
                         production_note="",
@@ -231,7 +269,7 @@ def engineer(
                             panel_id=pid,
                             edges=spec["edges"],
                             banding=BANDING,
-                            thickness=EDGE_BAND,
+                            thickness=eb_mm,
                         )
                     )
             cabinets.append(
@@ -244,10 +282,12 @@ def engineer(
                     depth=cab.depth,
                     height=cab.height,
                     panels=inst_panel_ids,
+                    attributes=cab.attributes,
                 )
             )
 
     cut_list = _group_cut_list(panels)
+    cutting_plan = build_cutting_plan(panels, order_id=order.order_id)
     status = (
         PackageStatus.engineering_blocked.value
         if blockers
@@ -263,6 +303,7 @@ def engineer(
         cabinets=cabinets,
         panels=panels,
         cut_list=cut_list,
+        cutting_plan=cutting_plan,
         edge_banding_list=edge_banding,
         blockers=blockers,
     )

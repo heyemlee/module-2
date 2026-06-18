@@ -15,6 +15,17 @@ from app.schemas import ApprovedCabinetOrderPackage
 def validate_gate(order: ApprovedCabinetOrderPackage) -> list[Blocker]:
     blockers: list[Blocker] = []
 
+    # --- Units must be inches (Module 2 V1 converts inches -> mm internally) ---
+    if order.units != "inches":
+        blockers.append(
+            Blocker(
+                code="UNSUPPORTED_UNITS",
+                owner="integration",
+                field="units",
+                message=f"Module 2 V1 accepts inches only, got '{order.units}'",
+            )
+        )
+
     # --- Source must prove this is final, not Round 1 / estimate ---
     if order.source.stage != "final":
         blockers.append(
@@ -73,9 +84,10 @@ def validate_gate(order: ApprovedCabinetOrderPackage) -> list[Blocker]:
             blockers.append(_missing(prefix, "cabinet_code"))
         if not cab.type.strip():
             blockers.append(_missing(prefix, "type"))
-        if not cab.material.strip():
+        # material/finish are nullable until `final`; the gate requires them here.
+        if not (cab.material or "").strip():
             blockers.append(_missing(prefix, "material"))
-        if not cab.finish.strip():
+        if not (cab.finish or "").strip():
             blockers.append(_missing(prefix, "finish"))
         for dim in ("width", "depth", "height"):
             if getattr(cab, dim) <= 0:

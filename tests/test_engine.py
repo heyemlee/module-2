@@ -33,12 +33,13 @@ def test_b302435_base_golden():
     assert (bottom.cut_length, bottom.cut_width) == (726.0, 590.6)
 
     back = parts["back"]
-    assert (back.length, back.width) == (876.3, 732.0)           # H, W-2t+2g
+    # Salice correction: base back height = H - tkr (4.5" toe-kick+rail) = 876.3-114.3
+    assert (back.length, back.width) == (762.0, 732.0)           # H-tkr, W-2t+2g
     assert back.edge_banding == []
 
     stretcher = parts["stretcher"]
     assert stretcher.quantity == 2
-    assert (stretcher.length, stretcher.width) == (726.0, 101.6)
+    assert (stretcher.length, stretcher.width) == (726.0, 76.2)   # 3" stretcher
 
     shelf = parts["adjustable_shelf"]
     assert (shelf.length, shelf.width) == (726.0, 571.6)         # W-2t, D-t-20

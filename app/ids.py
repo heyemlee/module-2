@@ -31,6 +31,18 @@ def input_fingerprint(order: ApprovedCabinetOrderPackage) -> str:
     return f"{order.source.cabinet_list_version}:{_short_hash(payload)}"
 
 
+def batch_id(
+    work_order_ids: list[str],
+    objective: str = "waste",
+    use_offcut_stock: bool = True,
+) -> str:
+    """Deterministic id for a cutting batch. The same work-order set + same options
+    (order-independent) always maps to the same batch -> idempotent re-batching;
+    a different objective or stock setting yields a different batch (different plan)."""
+    key = "|".join(sorted(work_order_ids)) + f"|{objective}|{int(use_offcut_stock)}"
+    return f"BATCH-{_short_hash(key)}"
+
+
 def cabinet_instance_id(source_cabinet_id: str, n: int) -> str:
     """nth physical copy of a cabinet line (1-based)."""
     return f"{source_cabinet_id}-{n}"
