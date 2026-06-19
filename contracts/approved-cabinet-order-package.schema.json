@@ -1,0 +1,261 @@
+{
+  "$defs": {
+    "Approval": {
+      "properties": {
+        "customer_confirmed": {
+          "default": false,
+          "title": "Customer Confirmed",
+          "type": "boolean"
+        },
+        "sales_confirmed": {
+          "default": false,
+          "title": "Sales Confirmed",
+          "type": "boolean"
+        },
+        "designer_approved": {
+          "default": false,
+          "title": "Designer Approved",
+          "type": "boolean"
+        }
+      },
+      "title": "Approval",
+      "type": "object"
+    },
+    "CabinetInput": {
+      "properties": {
+        "cabinet_id": {
+          "title": "Cabinet Id",
+          "type": "string"
+        },
+        "cabinet_code": {
+          "title": "Cabinet Code",
+          "type": "string"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "width": {
+          "title": "Width",
+          "type": "number"
+        },
+        "depth": {
+          "title": "Depth",
+          "type": "number"
+        },
+        "height": {
+          "title": "Height",
+          "type": "number"
+        },
+        "quantity": {
+          "default": 1,
+          "title": "Quantity",
+          "type": "integer"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "finish": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finish"
+        },
+        "adjustable_shelves": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Adjustable Shelves"
+        },
+        "fixed_shelves": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fixed Shelves"
+        },
+        "door_qty": {
+          "default": 0,
+          "title": "Door Qty",
+          "type": "integer"
+        },
+        "drawer_qty": {
+          "default": 0,
+          "title": "Drawer Qty",
+          "type": "integer"
+        },
+        "attributes": {
+          "additionalProperties": true,
+          "title": "Attributes",
+          "type": "object"
+        }
+      },
+      "required": [
+        "cabinet_id",
+        "cabinet_code",
+        "type",
+        "width",
+        "depth",
+        "height"
+      ],
+      "title": "CabinetInput",
+      "type": "object"
+    },
+    "ConfirmationItem": {
+      "description": "An item Module 1 flagged as needing confirmation. `closed` must be true\nfor the order to pass the gate.",
+      "properties": {
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "closed": {
+          "default": false,
+          "title": "Closed",
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "item_id"
+      ],
+      "title": "ConfirmationItem",
+      "type": "object"
+    },
+    "Project": {
+      "properties": {
+        "customer_name": {
+          "title": "Customer Name",
+          "type": "string"
+        },
+        "address": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Address"
+        }
+      },
+      "required": [
+        "customer_name"
+      ],
+      "title": "Project",
+      "type": "object"
+    },
+    "Source": {
+      "properties": {
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "layout_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Layout Version"
+        },
+        "cabinet_list_version": {
+          "title": "Cabinet List Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "stage",
+        "cabinet_list_version"
+      ],
+      "title": "Source",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "order_id": {
+      "title": "Order Id",
+      "type": "string"
+    },
+    "project": {
+      "$ref": "#/$defs/Project"
+    },
+    "approval": {
+      "$ref": "#/$defs/Approval"
+    },
+    "source": {
+      "$ref": "#/$defs/Source"
+    },
+    "units": {
+      "default": "inches",
+      "title": "Units",
+      "type": "string"
+    },
+    "cabinets": {
+      "items": {
+        "$ref": "#/$defs/CabinetInput"
+      },
+      "title": "Cabinets",
+      "type": "array"
+    },
+    "confirmation_required_items": {
+      "items": {
+        "$ref": "#/$defs/ConfirmationItem"
+      },
+      "title": "Confirmation Required Items",
+      "type": "array"
+    }
+  },
+  "required": [
+    "order_id",
+    "project",
+    "approval",
+    "source"
+  ],
+  "title": "ApprovedCabinetOrderPackage",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-contractVersion": "module2.v1"
+}

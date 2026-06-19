@@ -33,17 +33,72 @@ def test_b302435_base_golden():
     assert (bottom.cut_length, bottom.cut_width) == (726.0, 590.6)
 
     back = parts["back"]
-    assert (back.length, back.width) == (876.3, 732.0)           # H, W-2t+2g
+    # Salice correction: base back height = H - tkr (4.5" toe-kick+rail) = 876.3-114.3
+    assert (back.length, back.width) == (762.0, 732.0)           # H-tkr, W-2t+2g
     assert back.edge_banding == []
 
     stretcher = parts["stretcher"]
     assert stretcher.quantity == 2
-    assert (stretcher.length, stretcher.width) == (726.0, 101.6)
+    assert (stretcher.length, stretcher.width) == (726.0, 76.2)   # 3" stretcher
 
     shelf = parts["adjustable_shelf"]
     assert (shelf.length, shelf.width) == (726.0, 571.6)         # W-2t, D-t-20
     assert (shelf.cut_length, shelf.cut_width) == (724.0, 569.6)  # -2eb each
     assert shelf.edge_banding == ["front", "back", "left", "right"]
+
+
+def test_carcass_panels_drop_door_finish_and_merge_one_cut_group():
+    """Box panels carry NO door finish — box colour is in `material`, and the box edge
+    band = box colour (production flowchart 核心规则). Two cabinets with the same box
+    material but different door finishes must cut as ONE group, not fragment by colour.
+    """
+    order = make_order(
+        cabinets=[
+            CabinetInput(
+                cabinet_id="C1", cabinet_code="B302435", type="base",
+                width=30, depth=24, height=34.5, quantity=1,
+                material="White Birch plywood 18mm", finish="SM-Antracita",
+            ),
+            CabinetInput(
+                cabinet_id="C2", cabinet_code="B302435", type="base",
+                width=30, depth=24, height=34.5, quantity=1,
+                material="White Birch plywood 18mm", finish="SM-Blanco",
+            ),
+        ]
+    )
+    pkg = engineer(order, "WO-FF", "fp", CV)
+    assert pkg.status == "engineering_ready"
+    # carcass panels carry no door finish ...
+    assert all(p.finish == "" for p in pkg.panels)
+    # ... but the door finish is preserved at cabinet level for Module 3 (doors).
+    assert {c.finish for c in pkg.cabinets} == {"SM-Antracita", "SM-Blanco"}
+    # same box material + thickness -> ONE cutting group, not split by door colour.
+    assert len(pkg.cutting_plan.groups) == 1
+    assert pkg.cutting_plan.groups[0].material == "White Birch plywood 18mm"
+
+
+def test_edge_banding_ls_notation_by_board_length():
+    """L/S label notation is geometric: the board's longer pair of edges = L, shorter = S.
+    front/back run along `length`, left/right along `width`. Side front (the tall 876mm
+    edge) is L; an all-4-banded shelf is L×2 + S×2 (matches the production flowchart).
+    """
+    from app.schemas import ls_notation
+
+    # side 876.3 x 457.2, front-banded -> front runs along length(876) = the long edge.
+    assert ls_notation(["front"], 876.3, 457.2) == "L×1"
+    # shelf 726 x 591.6 banded all four -> L×2 (front/back=726) + S×2 (left/right=591).
+    assert ls_notation(["front", "back", "left", "right"], 726.0, 591.6) == "L×2 + S×2"
+    # back panel, no banding.
+    assert ls_notation([], 762.0, 732.0) == ""
+    # a panel wider than long flips which pair is L: front/back become the short edges.
+    assert ls_notation(["front"], 300.0, 800.0) == "S×1"
+
+    # end-to-end: the computed field rides on every PanelBOM in the package.
+    pkg = engineer(make_order(), "WO-LS", "fp", CV)
+    parts = _by_name(pkg)
+    assert parts["side"].edge_banding_ls == "L×1"               # front of the side = long
+    assert parts["adjustable_shelf"].edge_banding_ls == "L×2 + S×2"
+    assert parts["back"].edge_banding_ls == ""                  # back unbanded
 
 
 def test_wall_has_top_and_vertical_reduction():

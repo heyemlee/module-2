@@ -1,0 +1,40 @@
+# Board / cutting machine parameters (rules-as-data, all millimetres).
+#
+# These are MACHINE + STOCK parameters, not cabinet-design parameters: change the
+# saw or the stock sheet and you edit this file, not the nesting code. ai_ctx
+# §17.3 named this `board_config.json`; we keep YAML to match cabinets.yaml and
+# load it the same way (app/boards.py).
+#
+# Phase B V1 scope (confirmed with the user):
+#   - only full T0 stock sheets (no pre-ripped T1 strip inventory yet)
+#   - guillotine 2-stage cut: rip into strips (along the long axis) then crosscut
+#   - grain fixed: panel length runs along the 2438.4 long axis, width along 1219.2
+#     (panels are NOT rotated)
+#   - offcuts are recorded for reuse, but edge-banded-recovery correction is dropped
+#     (offcuts are bare material — banding happens after cutting)
+
+version: 1
+
+# Stock sheet (T0). Short axis = width, long axis = length.
+sheet_width: 1219.2
+sheet_length: 2438.4
+
+# Machine allowances.
+trim: 5.0        # edge skim removed per trimmed edge (both ends of each axis)
+saw_kerf: 5.0    # material consumed by each cut
+
+# Offcut recovery: keep a leftover piece if it reaches this size (mm).
+recovery_min_width: 264.8
+rail_min: 200.0
+
+# Max stock sheets the saw can cut in one stacked pass.
+max_stack: 4
+
+# Per-material stock sheet sizes (mm). The first `match` substring (case-insensitive)
+# found in a cutting group's material wins; no match -> the default sheet_width ×
+# sheet_length above (4×8 = 1219.2×2438.4, e.g. plywood). Seeded from the Salice
+# 板材选项 page. The FULL material→size table is still a factory TODO (confirmation
+# doc B#5), as is whether trim/kerf vary by material.
+stock:
+  - {match: "cleaf", width: 2065.0, length: 2800.0}   # Cleaf-*-19mm = 2800×2065 (confirmed)
+  # TODO (B#5): Lioher/panel "9'" width unknown; closet "8'"; box plywood = default 4×8.

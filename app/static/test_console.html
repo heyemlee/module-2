@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 2 · 测试台</title>
+<style>
+  :root{--ink:#1f2328;--muted:#646b73;--line:#e2e5e9;--soft:#f6f7f9;--blu:#274b8f;--blu-s:#eef3fb;
+    --grn:#1e7e34;--grn-s:#e6f4ea;--stop:#b3261e;--stop-s:#fbecec;--warn:#9a5b00;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--soft);color:var(--ink);
+    font:14.5px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 18px 70px}
+  header{border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:14px}
+  header h1{font-size:21px;margin:0 0 4px}
+  header .sub{color:var(--muted);font-size:13px}
+  header .links{margin-top:8px;font-size:13px}
+  header .links a{color:var(--blu);text-decoration:none;margin-right:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  section{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;
+    box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  h2{font-size:15px;margin:0 0 10px}
+  .samples{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .chip{font-size:12.5px;padding:5px 11px;border:1px solid var(--line);border-radius:999px;
+    background:var(--soft);cursor:pointer}
+  .chip:hover{background:var(--blu-s);border-color:#b9cdf0}
+  textarea{width:100%;min-height:300px;border:1px solid #c7ccd2;border-radius:8px;padding:10px;
+    font:12px/1.45 ui-monospace,Menlo,monospace;background:#fcfcfd;resize:vertical}
+  .btn{display:inline-block;padding:9px 18px;border-radius:8px;border:1px solid var(--blu);
+    background:var(--blu);color:#fff;font-size:14.5px;font-weight:600;cursor:pointer;margin-top:10px}
+  .btn:disabled{opacity:.5;cursor:default}
+  .badge{display:inline-block;font-size:13px;font-weight:700;padding:3px 12px;border-radius:999px}
+  .badge.ok{background:var(--grn-s);color:var(--grn)}
+  .badge.blocked{background:var(--stop-s);color:var(--stop)}
+  .summary{font-size:13.5px;margin:10px 0;color:#333}
+  .summary b{color:var(--blu)}
+  .blockers{margin:8px 0}
+  .blk{background:var(--stop-s);border:1px solid #e7b7b3;border-radius:8px;padding:8px 11px;margin:6px 0;font-size:13px}
+  .blk b{color:var(--stop)}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+  th,td{border:1px solid var(--line);padding:4px 7px;text-align:left}
+  th{background:var(--soft);color:var(--muted);font-size:11.5px}
+  pre{background:#0f1115;color:#d6deeb;border-radius:8px;padding:12px;overflow:auto;font-size:11.5px;
+    line-height:1.5;max-height:420px}
+  .tab{display:flex;gap:6px;margin:10px 0 4px}
+  .tab button{font-size:12.5px;padding:5px 12px;border:1px solid var(--line);border-radius:7px;
+    background:#fff;cursor:pointer}
+  .tab button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .pane{display:none}.pane.on{display:block}
+  .hint{color:var(--muted);font-size:12px}
+  #result .placeholder{color:var(--muted);font-size:13px;padding:30px 0;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Module 2 · 测试台</h1>
+  <div class="sub">填/选一张订单 → 提交 → 看拆板 BOM + 裁切单。这是给人测的页面;接口本身是 JSON API。</div>
+  <div class="links">
+    <a href="/docs" target="_blank">API 文档 /docs</a>
+    <a href="/api/module2/construction-form" target="_blank">工厂构造填报</a>
+    <a href="/api/module2/contract" target="_blank">契约 Schema</a>
+    <a href="/health" target="_blank">健康</a>
+  </div>
+</header>
+
+<div class="grid">
+  <section>
+    <h2>① 订单（可改 JSON）</h2>
+    <div class="samples">
+      <span class="chip" onclick="load('kitchen')">整厨（base+wall+pantry）</span>
+      <span class="chip" onclick="load('cleaf')">混材料（含 Cleaf）</span>
+      <span class="chip" onclick="load('sink')">水槽柜（应被拦）</span>
+      <span class="chip" onclick="load('tiny')">太小柜（应被拦）</span>
+      <span class="chip" onclick="load('unapproved')">未审批（闸门拦）</span>
+    </div>
+    <textarea id="order" spellcheck="false"></textarea>
+    <button class="btn" id="go" onclick="submit()">提交测试 ▶</button>
+    <span class="hint" id="msg"></span>
+  </section>
+
+  <section>
+    <h2>② 结果</h2>
+    <div id="result"><div class="placeholder">提交后这里显示状态 / BOM / 裁切单</div></div>
+  </section>
+</div>
+</div>
+
+<script>
+const SAMPLES = {
+  kitchen: {order_id:"ORD-TEST-K",project:{customer_name:"Chen"},
+    approval:{customer_confirmed:true,sales_confirmed:true,designer_approved:true},
+    source:{stage:"final",cabinet_list_version:"v1"},units:"inches",
+    cabinets:[
+      {cabinet_id:"B1",cabinet_code:"B302435",type:"base",width:30,depth:24,height:34.5,quantity:3,material:"plywood-3/4",finish:"white",attributes:{hinge:"L"}},
+      {cabinet_id:"W1",cabinet_code:"W301230",type:"wall",width:30,depth:12,height:30,quantity:2,material:"plywood-3/4",finish:"white"},
+      {cabinet_id:"T1",cabinet_code:"TP1272L",type:"tall",width:12,depth:24,height:72,quantity:1,material:"plywood-3/4",finish:"white"}
+    ]},
+  cleaf:{order_id:"ORD-TEST-C",project:{customer_name:"Chen"},
+    approval:{customer_confirmed:true,sales_confirmed:true,designer_approved:true},
+    source:{stage:"final",cabinet_list_version:"v1"},units:"inches",
+    cabinets:[
+      {cabinet_id:"B1",cabinet_code:"B302435",type:"base",width:30,depth:24,height:34.5,quantity:2,material:"plywood-3/4",finish:"white"},
+      {cabinet_id:"A1",cabinet_code:"B362435",type:"base",width:36,depth:24,height:34.5,quantity:2,material:"Cleaf-LR22-19mm",finish:"cleaf"}
+    ]},
+  sink:{order_id:"ORD-TEST-S",project:{customer_name:"Chen"},
+    approval:{customer_confirmed:true,sales_confirmed:true,designer_approved:true},
+    source:{stage:"final",cabinet_list_version:"v1"},units:"inches",
+    cabinets:[{cabinet_id:"S1",cabinet_code:"FDRSB30T",type:"base",width:30,depth:24,height:34.5,quantity:1,material:"plywood-3/4",finish:"white"}]},
+  tiny:{order_id:"ORD-TEST-T",project:{customer_name:"Chen"},
+    approval:{customer_confirmed:true,sales_confirmed:true,designer_approved:true},
+    source:{stage:"final",cabinet_list_version:"v1"},units:"inches",
+    cabinets:[{cabinet_id:"X1",cabinet_code:"B011224",type:"base",width:1,depth:24,height:34.5,quantity:1,material:"plywood-3/4",finish:"white"}]},
+  unapproved:{order_id:"ORD-TEST-U",project:{customer_name:"Chen"},
+    approval:{customer_confirmed:false,sales_confirmed:true,designer_approved:true},
+    source:{stage:"final",cabinet_list_version:"v1"},units:"inches",
+    cabinets:[{cabinet_id:"B1",cabinet_code:"B302435",type:"base",width:30,depth:24,height:34.5,quantity:1,material:"plywood-3/4",finish:"white"}]}
+};
+function load(k){document.getElementById('order').value=JSON.stringify(SAMPLES[k],null,2);
+  document.getElementById('msg').textContent='';}
+load('kitchen');
+
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+async function submit(){
+  const msg=document.getElementById('msg'), res=document.getElementById('result'), go=document.getElementById('go');
+  let order;
+  try{order=JSON.parse(document.getElementById('order').value);}catch(e){msg.textContent='JSON 格式错: '+e.message;return;}
+  go.disabled=true; msg.textContent='提交中…'; res.innerHTML='<div class="placeholder">处理中…</div>';
+  try{
+    const r=await fetch('/api/module2/production-packages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(order)});
+    const body=await r.json();
+    const wid=body.data&&body.data.work_order_id;
+    let html='';
+    const blocked = body.status!=='engineering_ready';
+    html+=`<span class="badge ${blocked?'blocked':'ok'}">${esc(body.status)}</span>`;
+    if(wid) html+=` <span class="hint">work_order_id ${esc(wid)}</span>`;
+    if(body.blockers&&body.blockers.length){
+      html+='<div class="blockers">'+body.blockers.map(b=>
+        `<div class="blk"><b>${esc(b.code)}</b> · owner=${esc(b.owner)}<br>${esc(b.message)}</div>`).join('')+'</div>';
+    }
+    if(!blocked&&wid){
+      const pkg=await (await fetch('/api/module2/production-packages/'+wid)).json();
+      const d=pkg.data, cp=d.cutting_plan;
+      const util=cp.groups.map(g=>g.utilization+'%').join(' / ');
+      html+=`<div class="summary">柜 <b>${d.cabinets.length}</b> · 板件 <b>${d.panels.length}</b> · 整板 <b>${cp.fresh_sheets}</b> 张 · 图案 <b>${cp.groups.reduce((a,g)=>a+g.distinct_patterns,0)}</b> · 利用率 <b>${util}</b></div>`;
+      html+=`<div class="tab"><button class="on" onclick="tab(0)">裁切单</button><button onclick="tab(1)">板件 BOM</button></div>`;
+      const sheet=await (await fetch('/api/module2/production-packages/'+wid+'/cutting-plan')).text();
+      html+=`<div class="pane on" id="p0"><pre>${esc(sheet)}</pre></div>`;
+      let rows=d.panels.map(p=>`<tr><td>${esc(p.panel_id)}</td><td>${esc(p.name)}</td><td>${p.length}×${p.width}</td><td>${p.cut_length}×${p.cut_width}</td><td>${p.thickness}</td><td>×${p.quantity}</td><td>${esc(p.material)}</td><td>${(p.edge_banding||[]).join(',')||'-'}</td></tr>`).join('');
+      html+=`<div class="pane" id="p1"><table><thead><tr><th>panel</th><th>部件</th><th>成品 长×宽</th><th>cut</th><th>厚</th><th>量</th><th>材料</th><th>封边</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }
+    res.innerHTML=html; msg.textContent='完成';
+  }catch(e){res.innerHTML='<div class="blk">请求失败: '+esc(e.message)+'</div>'; msg.textContent='';}
+  go.disabled=false;
+}
+function tab(i){document.querySelectorAll('.tab button').forEach((b,j)=>b.classList.toggle('on',i===j));
+  document.querySelectorAll('.pane').forEach((p,j)=>p.classList.toggle('on',i===j));}
+</script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>橱柜构造规则 · 工厂填报</title>
+<style>
+  :root{--ink:#1f2328;--muted:#646b73;--line:#e2e5e9;--soft:#f6f7f9;--grn:#2f6f4f;
+    --grn-s:#e8f3ec;--blu:#274b8f;--blu-s:#eef3fb;--warn:#9a5b00;--warn-s:#fdf3e3;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--soft);color:var(--ink);
+    font:14.5px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:840px;margin:0 auto;padding:28px 18px 80px}
+  header{border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:8px}
+  header h1{font-size:22px;margin:0 0 6px}
+  header .sub{color:var(--muted);font-size:13px}
+  section{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0;
+    box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  h2{font-size:16px;margin:0 0 4px;display:flex;gap:9px;align-items:center}
+  h2 .n{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;
+    background:var(--ink);color:#fff;border-radius:6px;font-size:13px;font-weight:700}
+  .lead{color:var(--muted);font-size:13px;margin:2px 0 12px}
+  .row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:8px 0;border-top:1px dashed var(--line)}
+  .row:first-of-type{border-top:none}
+  .row label{flex:1 1 240px;font-weight:600;font-size:13.5px}
+  .row .hint{color:var(--muted);font-weight:400;font-size:12px;display:block}
+  input[type=number],input[type=text],select{padding:6px 9px;border:1px solid #c7ccd2;border-radius:7px;
+    font-size:13.5px;background:#fcfcfd}
+  input[type=number]{width:92px}input[type=text]{width:200px}
+  .u{color:var(--muted);font-size:12px}
+  .confirmed{background:var(--grn-s);border-color:#aed581}
+  .confirmed h2 .n{background:var(--grn)}
+  .confirmed td{font-size:12.8px}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left}
+  th{background:var(--soft);font-size:12px;color:var(--muted)}
+  table input{width:100%;border:none;background:transparent;padding:2px 3px;font-size:13px}
+  table input:focus{outline:1px solid #c7ccd2;border-radius:4px;background:#fff}
+  .btn{display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid var(--blu);
+    background:var(--blu);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+  .btn.ghost{background:#fff;color:var(--blu)}
+  .addrow{font-size:12.5px;color:var(--blu);cursor:pointer;display:inline-block;margin-top:6px}
+  textarea{width:100%;min-height:160px;border:1px solid #c7ccd2;border-radius:8px;padding:10px;
+    font:12px/1.5 ui-monospace,Menlo,monospace;background:#fcfcfd}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .out{display:none}.out.show{display:block}
+  .ok{color:var(--grn);font-weight:600;font-size:13px}
+  .meta input{width:240px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>橱柜构造规则 · 工厂填报</h1>
+  <div class="sub">填下面的空 → 点「生成」→ 复制 / 下载 / 提交。系统据此出准确下料尺寸。单位 <b>mm（1″=25.4mm）</b>。</div>
+</header>
+
+<!-- confirmed -->
+<section class="confirmed">
+  <h2><span class="n">✓</span>已按你们 Salice 表确认（无需填，仅供核对）</h2>
+  <table>
+    <tr><td>底柜拉条深</td><td><b>3″ = 76.2mm</b></td><td>底/高柜背板高</td><td><b>H − 4.5″</b></td></tr>
+    <tr><td>箱体板厚</td><td><b>18mm</b></td><td>抽屉板厚</td><td>15mm</td></tr>
+    <tr><td>封边</td><td>前沿封边</td><td>锯缝 / 扫边</td><td>5mm / 5mm</td></tr>
+  </table>
+</section>
+
+<!-- A: 7 mm rules -->
+<section>
+  <h2><span class="n">A</span>需要你填的精确量（7 项）</h2>
+  <p class="lead">Salice 表是名义面积，下面这些它看不出，需要你给：</p>
+
+  <div class="row"><label>1 · 背板宽 相对柜内净宽<span class="hint">C26224 实测缩进 30mm ≠ 2×板厚36mm</span></label>
+    <span>缩进 <input type="number" name="back_inset_mm" step="0.1"> <span class="u">mm</span></span>
+    <span>入槽？<select name="back_grooved"><option value=""></option><option>是</option><option>否</option></select></span>
+    <span>槽深 <input type="number" name="back_groove_depth_mm" step="0.1"> <span class="u">mm</span></span>
+  </div>
+
+  <div class="row"><label>2 · 层板前缩 setback</label>
+    <span>活动层板 <input type="number" name="adj_shelf_setback_mm" step="0.1"> <span class="u">mm</span></span>
+    <span>固定层板 <input type="number" name="fixed_shelf_setback_mm" step="0.1"> <span class="u">mm</span></span>
+  </div>
+
+  <div class="row"><label>3 · 底/固定层板 入槽 dado<span class="hint">入侧板槽则宽 = 净宽 + 2×槽深</span></label>
+    <span>入槽？<select name="bottom_dado"><option value=""></option><option>是</option><option>否</option></select></span>
+    <span>槽深 <input type="number" name="dado_depth_mm" step="0.1"> <span class="u">mm</span></span>
+  </div>
+
+  <div class="row"><label>4 · 背板材料 / 厚度<span class="hint">板材选项里「MDF-White vinyl-1/4」是个选项</span></label>
+    <span><select name="back_material_mode"><option value=""></option><option>固定 MDF 1/4″</option><option>每订单选</option><option>同箱体 18mm</option></select></span>
+    <span>厚度 <input type="number" name="back_thickness_mm" step="0.1"> <span class="u">mm</span></span>
+  </div>
+
+  <div class="row" style="display:block"><label>5 · 每种材料 整张板尺寸<span class="hint">已知 Cleaf 2800×2065；其余请补</span></label>
+    <table id="boards"><thead><tr><th>材料（名称/关键词）</th><th>宽 mm</th><th>长 mm</th></tr></thead>
+      <tbody>
+        <tr><td><input name="b_mat" value="White Birch / melamine plywood"></td><td><input name="b_w" value="1219.2"></td><td><input name="b_l" value="2438.4"></td></tr>
+        <tr><td><input name="b_mat" value="Cleaf"></td><td><input name="b_w" value="2065"></td><td><input name="b_l" value="2800"></td></tr>
+        <tr><td><input name="b_mat" value="Lioher / 面板料 9'"></td><td><input name="b_w"></td><td><input name="b_l" value="2743.2"></td></tr>
+      </tbody></table>
+    <span class="addrow" onclick="addBoard()">+ 加一行材料</span>
+  </div>
+
+  <div class="row" style="display:block"><label>6 · 纹理 grain（哪些必须顺纹、不可旋转）<span class="hint">木纹料一般锁竖纹；素色料无纹可旋转</span></label>
+    <input type="text" name="grain_notes" style="width:100%" placeholder="例：门板/侧板顺纹；素色 SM-/HG- 可旋转；背板可旋转…">
+  </div>
+
+  <div class="row" style="display:block"><label>7 · 水槽柜 FDRSB 部件表<span class="hint">真实：无底？挖洞背板（下3/左右4-6/上8″）？6″封板？</span></label>
+    <table id="sink"><thead><tr><th>部件</th><th>有/数量</th><th>尺寸公式 / 说明</th></tr></thead>
+      <tbody>
+        <tr><td><input name="s_part" value="侧板"></td><td><input name="s_qty"></td><td><input name="s_note"></td></tr>
+        <tr><td><input name="s_part" value="底板（疑无）"></td><td><input name="s_qty"></td><td><input name="s_note"></td></tr>
+        <tr><td><input name="s_part" value="背板（挖洞？）"></td><td><input name="s_qty"></td><td><input name="s_note"></td></tr>
+        <tr><td><input name="s_part" value="6″封板"></td><td><input name="s_qty"></td><td><input name="s_note"></td></tr>
+        <tr><td><input name="s_part" value="拉条"></td><td><input name="s_qty"></td><td><input name="s_note"></td></tr>
+      </tbody></table>
+    <span class="addrow" onclick="addSink()">+ 加一行部件</span>
+  </div>
+</section>
+
+<!-- B: family + notes -->
+<section>
+  <h2><span class="n">B</span>柜型映射确认 + 备注</h2>
+  <div class="row"><label>FDB/DRB/CDB/SPB/V → 底柜箱体；W/WBF → 墙柜；TP → 高柜；转角/烤箱/开放架/电器 → 不自动拆</label>
+    <select name="family_mapping_ok"><option value="">这套映射对吗？</option><option>对</option><option>有错（写在备注）</option></select></div>
+  <div class="row" style="display:block"><label>抽屉盒要不要 Module 2 产？多门中竖隔 / 高柜中横档？</label>
+    <input type="text" name="scope_notes" style="width:100%" placeholder="例：抽屉盒不产；多门柜有中竖隔…"></div>
+  <div class="row" style="display:block"><label>其它备注</label>
+    <textarea name="notes" style="min-height:60px"></textarea></div>
+</section>
+
+<!-- meta + generate -->
+<section>
+  <h2><span class="n">✎</span>提交</h2>
+  <div class="row meta"><label>填表人 / 工艺</label><input type="text" name="submitted_by"></div>
+  <div class="actions">
+    <span class="btn" onclick="generate()">① 生成填报内容</span>
+    <span class="btn ghost" onclick="downloadOut()">下载 JSON</span>
+    <span class="btn ghost" onclick="copyOut()">复制</span>
+    <span class="btn ghost" onclick="submitOut()" id="submitBtn">提交到系统</span>
+  </div>
+  <div class="out" id="outBox" style="margin-top:12px">
+    <textarea id="out" readonly></textarea>
+    <div id="status" class="ok"></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+function addBoard(){const tb=document.querySelector('#boards tbody');
+  tb.insertAdjacentHTML('beforeend','<tr><td><input name="b_mat"></td><td><input name="b_w"></td><td><input name="b_l"></td></tr>');}
+function addSink(){const tb=document.querySelector('#sink tbody');
+  tb.insertAdjacentHTML('beforeend','<tr><td><input name="s_part"></td><td><input name="s_qty"></td><td><input name="s_note"></td></tr>');}
+
+function val(n){const e=document.querySelector('[name="'+n+'"]');return e?e.value.trim():'';}
+function rows(tbId,cols){const out=[];document.querySelectorAll('#'+tbId+' tbody tr').forEach(tr=>{
+  const r={};let any=false;cols.forEach((c,i)=>{const v=tr.querySelectorAll('input')[i].value.trim();r[c.k]=v;if(v)any=true;});
+  if(any)out.push(r);});return out;}
+
+function collect(){
+  return {
+    contract_version:"module2.v1",
+    submitted_by: val('submitted_by'),
+    submitted_at: new Date().toISOString(),
+    construction:{
+      back_inset_mm: val('back_inset_mm'), back_grooved: val('back_grooved'),
+      back_groove_depth_mm: val('back_groove_depth_mm'),
+      adj_shelf_setback_mm: val('adj_shelf_setback_mm'), fixed_shelf_setback_mm: val('fixed_shelf_setback_mm'),
+      bottom_dado: val('bottom_dado'), dado_depth_mm: val('dado_depth_mm'),
+      back_material_mode: val('back_material_mode'), back_thickness_mm: val('back_thickness_mm'),
+      grain_notes: val('grain_notes')
+    },
+    board_sizes: rows('boards',[{k:'material'},{k:'width'},{k:'length'}]),
+    sink_base_parts: rows('sink',[{k:'part'},{k:'qty'},{k:'note'}]),
+    family_mapping_ok: val('family_mapping_ok'),
+    scope_notes: val('scope_notes'),
+    notes: val('notes')
+  };
+}
+let last="";
+function generate(){last=JSON.stringify(collect(),null,2);
+  document.getElementById('out').value=last;
+  document.getElementById('outBox').classList.add('show');
+  document.getElementById('status').textContent='已生成 —— 可复制 / 下载 / 提交';}
+function downloadOut(){if(!last)generate();
+  const b=new Blob([last],{type:'application/json'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='construction-rules.json';a.click();}
+function copyOut(){if(!last)generate();navigator.clipboard.writeText(last).then(()=>{
+  document.getElementById('status').textContent='已复制到剪贴板';});}
+function submitOut(){if(!last)generate();
+  fetch('/api/module2/construction-rules',{method:'POST',headers:{'Content-Type':'application/json'},body:last})
+   .then(r=>r.json()).then(j=>{document.getElementById('status').textContent='✅ 已提交到系统（status: '+j.status+'）';})
+   .catch(()=>{document.getElementById('status').textContent='离线打开无法提交 —— 请改用「下载 JSON」发回。';});}
+// hide submit button when opened as a local file
+if(location.protocol==='file:'){document.getElementById('submitBtn').style.display='none';}
+</script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 2 · 板件构造规则确认（详细版）</title>
+<style>
+  :root{
+    --ink:#1f2328; --muted:#646b73; --line:#e2e5e9; --bg:#fff; --soft:#f6f7f9;
+    --grn:#2f6f4f; --grn-s:#e8f3ec; --warn:#9a5b00; --warn-s:#fdf3e3;
+    --stop:#9a2f2f; --stop-s:#fbecec; --blu:#274b8f; --blu-s:#eef3fb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--soft);color:var(--ink);
+    font:14.5px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:920px;margin:0 auto;padding:30px 20px 70px}
+  header.doc{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:6px}
+  header.doc h1{font-size:23px;margin:0 0 6px}
+  header.doc .sub{color:var(--muted);font-size:13px}
+  header.doc .how{margin-top:10px;font-size:12.5px;color:var(--muted);background:var(--soft);
+    border-left:3px solid var(--line);padding:8px 12px;border-radius:0 6px 6px 0}
+  section{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:16px 0;
+    box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  h2{font-size:17px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  h2 .n{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;
+    background:var(--ink);color:#fff;border-radius:7px;font-size:14px;font-weight:700}
+  .lead{color:var(--muted);font-size:13px;margin:2px 0 12px}
+  table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12.8px}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:var(--soft);font-weight:600;font-size:12px;color:var(--muted)}
+  .now{color:var(--blu);font-weight:600}
+  .conf{color:var(--stop)}
+  .fill{background:#fffdf5;min-width:120px}
+  .fill::after{content:"________";color:#c8b56a}
+  .crux{border:2px solid var(--blu);background:var(--blu-s)}
+  .crux h2 .n{background:var(--blu)}
+  .opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);
+    border-radius:8px;background:#fff;margin:7px 0}
+  .opt .box{flex:0 0 auto;width:17px;height:17px;border:2px solid var(--muted);border-radius:4px;margin-top:2px}
+  .opt b{font-size:14px}.opt .d{color:var(--muted);font-size:12.5px}
+  .ex{border:1px solid var(--line);border-radius:9px;margin:12px 0;overflow:hidden}
+  .ex .h{background:var(--soft);padding:8px 12px;font-weight:700;font-size:13.5px}
+  .ex .h span{font-weight:400;color:var(--muted);font-size:12px}
+  .chk{font-size:11.5px;color:var(--muted)}
+  .tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;font-weight:600}
+  .tag.you{background:#eaf1fb;color:var(--blu)} .tag.co{background:#f1eafb;color:#7a4fa3}
+  .note{font-size:12.3px;color:var(--muted);background:var(--soft);border-left:3px solid var(--line);
+    padding:8px 12px;border-radius:0 6px 6px 0;margin:10px 0}
+  code{background:var(--soft);padding:1px 5px;border-radius:4px;font-size:12px}
+  footer.doc{margin-top:22px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:12.3px}
+  @media print{body{background:#fff}.wrap{padding:0 6px}section,.ex{box-shadow:none;break-inside:avoid;page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <h1>板件构造规则确认 · 详细版</h1>
+  <div class="sub">给工艺 / 生产工程师：确认下列 mm 级构造规则，系统才能算出正确的下料尺寸。每项都列了我们<b>现在用的值</b>和<b>来自你们真实订单(C26061 / C26224)的冲突证据</b>。</div>
+  <div class="how">已比对 Salice 表：✓ 项已确认（复核即可），只剩 ⏳ 项要你给。怎么填：① A 选总方向；② ✓ 节复核；③ B 节 7 个 ⏳ 参数填数；④ C 节真实柜每块板对就✓、不对写正确值；⑤ D 节水槽柜部件表；⑥ F 节系列/范围。<b>单位 mm（1″=25.4mm）；尺寸 长×宽。</b></div>
+</header>
+
+<!-- A -->
+<section class="crux">
+  <h2><span class="n">A</span>总方向（先定这个）<span class="tag co">工艺/老板</span></h2>
+  <p class="lead">已比对你们的 <code>C26061 Salice 物料表</code>，系统现已按表里的构造模型出料（踢脚+横档 4.5″、底柜拉条 3″、材料分部位）。请确认：</p>
+  <div class="opt"><div class="box"></div><div><b>A1 · Salice 表就是权威构造（推荐）</b><div class="d">下面 ✓ 项即按此表、已落代码，复核即可。</div></div></div>
+  <div class="opt"><div class="box"></div><div><b>A2 · 另有更新 / 不同的构造标准</b><div class="d">请在下面 ⏳ 项里写正确值。</div></div></div>
+</section>
+
+<!-- Confirmed -->
+<section>
+  <h2><span class="n">✓</span>已被 Salice 表确认（复核即可，无需再回数）<span class="tag you">已落代码</span></h2>
+  <table>
+    <thead><tr><th>项</th><th>确认值（来自 Salice 面积公式）</th><th style="width:120px">状态</th></tr></thead>
+    <tbody>
+      <tr><td>顶板 vs 拉条</td><td>底柜 = <b>3″ 拉条</b>（顶板=W×3）；墙柜 = 整顶板</td><td>✅ 已改（原 4″）</td></tr>
+      <tr><td>踢脚 + 横档</td><td>底/高柜 背板高 = <b>H − 4.5″</b>（侧板仍整高 H×D）</td><td>✅ 已改（原整高）</td></tr>
+      <tr><td>材料 / 板厚</td><td>箱体 <b>18mm</b> · 抽屉 15mm（板材选项页）</td><td>✅ 一致</td></tr>
+      <tr><td>封边分配</td><td>前沿封边（箱体封边公式 = W×2 + H×2 + W×固定层板）</td><td>✅ 一致</td></tr>
+      <tr><td>锯缝 / 扫边</td><td>5mm / 5mm</td><td>✅ 已确认</td></tr>
+    </tbody>
+  </table>
+  <div class="note">这些已由 Salice 表证实并落进系统，<b>只需复核有无特例</b>，不必逐个回数。</div>
+</section>
+
+<!-- B -->
+<section>
+  <h2><span class="n">B</span>⏳ 仍需你补的（Salice 表答不了的）<span class="tag co">工艺</span></h2>
+  <p class="lead">Salice 表给的是<b>名义面积</b>（用原始 W/H/D、不扣板厚），下面这些是它<b>看不出</b>的最后几个精确量：</p>
+  <table>
+    <thead><tr><th style="width:22px">#</th><th>参数</th><th>系统现在的假设</th><th style="width:150px">你给的正确值</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>背板宽：入槽 / 扣减</td><td class="now">宽 = 柜内净宽 + 2×3mm 槽（嵌 3mm 侧槽）</td><td class="fill"></td></tr>
+      <tr><td></td><td colspan="2" class="chk">→ 背板宽相对净宽 缩进/外扩 __mm；入槽否？槽深 __mm？（C26224 实测缩进 30mm ≠ 36mm）</td><td class="fill"></td></tr>
+      <tr><td>2</td><td>层板前缩 setback</td><td class="now">活动层板 = 净深 − 20mm；固定层板 = 满净深</td><td class="fill"></td></tr>
+      <tr><td></td><td colspan="2" class="chk">→ 活动层板前缩 __mm；固定层板前缩 __mm</td><td class="fill"></td></tr>
+      <tr><td>3</td><td>底 / 固定层板入槽 dado</td><td class="now">底板 = 净宽 W−2t、平接不入槽</td><td class="fill"></td></tr>
+      <tr><td></td><td colspan="2" class="chk">→ 底/固定层板入侧板槽否？入槽则宽 = 净宽 + 2×槽深，槽深 __mm</td><td class="fill"></td></tr>
+      <tr><td>4</td><td>背板材料 / 厚度</td><td class="now">默认 18mm，同箱体</td><td class="fill"></td></tr>
+      <tr><td></td><td colspan="2" class="chk">→ 背板固定用 MDF 1/4″(≈6mm)，还是每订单选？（板材选项里「MDF-White vinyl-1/4」是个选项）</td><td class="fill"></td></tr>
+      <tr><td>5</td><td>完整板材规格表</td><td class="now">只有 1219.2×2438.4；已知 Cleaf 2800×2065</td><td class="fill"></td></tr>
+      <tr><td></td><td colspan="2" class="chk">→ 每种常用材料整张尺寸：白桦 __×__、Syn __×__、其他 __×__</td><td class="fill"></td></tr>
+      <tr><td>6</td><td>纹理方向 grain</td><td class="now">全部锁定、不旋转</td><td class="fill"></td></tr>
+      <tr><td></td><td colspan="2" class="chk">→ 哪些部件必须顺纹（不可旋转）？素色板（无纹理）可否一律旋转？</td><td class="fill"></td></tr>
+      <tr><td>7</td><td>水槽柜 FDRSB</td><td class="now">暂禁用（Salice 面积把它当普通底柜，不准）</td><td class="fill"></td></tr>
+      <tr><td></td><td colspan="2" class="chk">→ 见第 D 节给部件表（无底？挖洞背板？6″封板？）</td><td class="fill"></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- C -->
+<section>
+  <h2><span class="n">C</span>真实柜子逐块确认（对就✓，不对写正确值）<span class="tag co">工艺</span></h2>
+  <p class="lead">下面是系统<b>现在</b>对几个真实柜子算出的板件尺寸（mm，长×宽）。请逐块核：成品尺寸 = 装好后；cut 尺寸 = 实际下料（已扣封边）。</p>
+
+  <div class="ex">
+    <div class="h">FDB09L · 底柜 · 9″W × 34.5″H × 24″D <span>（内部 W=228.6 D=609.6 H=876.3 mm）</span></div>
+    <table>
+      <thead><tr><th>部件</th><th>数量</th><th>成品 长×宽</th><th>cut 长×宽</th><th>厚</th><th>封边</th><th style="width:150px">✓ 对 / 改为</th></tr></thead>
+      <tbody>
+        <tr><td>侧板 side</td><td>2</td><td>876.3 × 609.6</td><td>876.3 × 608.6</td><td>18</td><td>前沿</td><td class="fill"></td></tr>
+        <tr><td>底板 bottom</td><td>1</td><td>192.6 × 591.6</td><td>192.6 × 590.6</td><td>18</td><td>前沿</td><td class="fill"></td></tr>
+        <tr><td>背板 back ✓</td><td>1</td><td>762.0 × 198.6</td><td>762.0 × 198.6</td><td>18</td><td>无</td><td class="fill"></td></tr>
+        <tr><td>拉条 stretcher ✓</td><td>2</td><td>192.6 × 76.2</td><td>192.6 × 76.2</td><td>18</td><td>无</td><td class="fill"></td></tr>
+        <tr><td>活动层板 shelf</td><td>1</td><td>192.6 × 571.6</td><td>190.6 × 569.6</td><td>18</td><td>四边</td><td class="fill"></td></tr>
+      </tbody>
+    </table>
+    <div class="chk" style="padding:0 12px 10px">✓ 背板高 = H−4.5″ = 762.0、拉条深 = 3″ = 76.2 —— <b>已按 Salice 表改</b>，复核即可。待核：背板宽 198.6（入槽量）、层板前缩。</div>
+  </div>
+
+  <div class="ex">
+    <div class="h">W301230 · 墙柜 · 30″W × 30″H × 12″D <span>（内部 W=762 D=304.8 H=762 mm）</span></div>
+    <table>
+      <thead><tr><th>部件</th><th>数量</th><th>成品 长×宽</th><th>cut 长×宽</th><th>厚</th><th>封边</th><th style="width:150px">✓ 对 / 改为</th></tr></thead>
+      <tbody>
+        <tr><td>侧板 side</td><td>2</td><td>762.0 × 304.8</td><td>760.0 × 303.8</td><td>18</td><td>前沿</td><td class="fill"></td></tr>
+        <tr><td>顶板 top</td><td>1</td><td>726.0 × 286.8</td><td>726.0 × 285.8</td><td>18</td><td>前沿</td><td class="fill"></td></tr>
+        <tr><td>底板 bottom</td><td>1</td><td>726.0 × 286.8</td><td>726.0 × 285.8</td><td>18</td><td>前沿</td><td class="fill"></td></tr>
+        <tr><td>背板 back</td><td>1</td><td>762.0 × 732.0</td><td>760.0 × 732.0</td><td>18</td><td>无</td><td class="fill"></td></tr>
+        <tr><td>活动层板 shelf</td><td>2</td><td>726.0 × 266.8</td><td>724.0 × 264.8</td><td>18</td><td>四边</td><td class="fill"></td></tr>
+      </tbody>
+    </table>
+    <div class="chk" style="padding:0 12px 10px">重点核：墙柜背板厚是否真 18mm（薄背板？）、背板缩进、墙柜有无踢脚（一般无）。</div>
+  </div>
+
+  <div class="note">高柜 TP（如 24×84×24）结构同墙柜 + 1 固定层板，规则一致就不另列；如有不同请注明。</div>
+</section>
+
+<!-- D -->
+<section>
+  <h2><span class="n">D</span>水槽柜 FDRSB · 给完整部件表<span class="tag co">工艺</span></h2>
+  <p class="lead">C26061 备注显示真实构造（背板挖洞 下留 3″/左右 4–6″/上留 8″ · 前上方 6″ 封板挡水盆 · 踢脚 4″ · 无底板）。这远比普通底柜复杂，请给一张部件表：</p>
+  <table>
+    <thead><tr><th>部件</th><th>有/无 · 数量</th><th>成品 长×宽公式</th><th>cut（扣封边）</th><th>厚</th><th>封边</th></tr></thead>
+    <tbody>
+      <tr><td>侧板</td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+      <tr><td>底板（疑无）</td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+      <tr><td>背板（挖洞？）</td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+      <tr><td>6″ 封板</td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+      <tr><td>拉条</td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+      <tr><td>其他</td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td><td class="fill"></td></tr>
+    </tbody>
+  </table>
+  <div class="note">关键问题：背板的「洞」要不要在下料尺寸里体现（按外框整块切 + 后道挖洞备注 vs 直接切成异形）？ 6″ 封板算独立板件吗？</div>
+</section>
+
+<!-- F -->
+<section>
+  <h2><span class="n">F</span>柜型系列映射 + 范围确认<span class="tag co">工艺/老板</span></h2>
+  <p class="lead">系统把真实柜码按系列前缀映射到箱体类型。确认这些假设对不对：</p>
+  <table>
+    <thead><tr><th>系列</th><th>系统当作</th><th style="width:150px">✓ 对 / 纠正</th></tr></thead>
+    <tbody>
+      <tr><td>FDB / DRB / DB / CDB / TCFDB / SPB（门柜·抽屉柜·灶台柜·垃圾柜·调料柜）</td><td>普通底柜箱体</td><td class="fill"></td></tr>
+      <tr><td>V / VF / VFB（浴室柜，深 21″）</td><td>底柜箱体（仅深度不同）</td><td class="fill"></td></tr>
+      <tr><td>W / WBF / WSL（墙柜·折叠门·上翻门）</td><td>墙柜箱体</td><td class="fill"></td></tr>
+      <tr><td>TP（高柜 / 储物柜）</td><td>高柜箱体</td><td class="fill"></td></tr>
+      <tr><td>转角 BCB·LSCB·WBC… / 烤箱 SO·DO / 开放架 WOS·OSB / 电器 RFW·WM·MB</td><td>不自动拆（退回人工排）</td><td class="fill"></td></tr>
+    </tbody>
+  </table>
+  <div class="note">范围确认：① <b>抽屉盒</b>（drawer box 的侧/底板）要不要 Module 2 产？现在<b>只产箱体、不产抽屉盒</b>。② 多门柜的中竖隔板、高柜中横档要不要产？③ 灶台柜/垃圾柜等是否有普通底柜没有的特殊板件？</div>
+</section>
+
+<!-- E -->
+<section>
+  <h2><span class="n">E</span>回传格式</h2>
+  <p class="lead">把上面的空填了即可。每个新柜型 / 每条规则，最终需要的是这五样：</p>
+  <table>
+    <thead><tr><th>字段</th><th>含义</th><th>例</th></tr></thead>
+    <tbody>
+      <tr><td>部件 + 数量</td><td>这柜有哪些板、各几块</td><td>侧板 ×2</td></tr>
+      <tr><td>成品 长×宽</td><td>装好后尺寸（mm）</td><td>876.3 × 609.6</td></tr>
+      <tr><td>cut 长×宽</td><td>实际下料（已扣封边）</td><td>876.3 × 608.6</td></tr>
+      <tr><td>厚</td><td>板厚（mm）</td><td>18 或 15</td></tr>
+      <tr><td>封边</td><td>哪几条边封</td><td>前沿 / 四边 / 无</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer class="doc">
+  Salice 表已确认的（拉条 3″、背板 H−4.5″、箱体 18mm、前沿封边、锯缝/扫边）<b>已落进系统</b>。剩下回传 B 节 7 项即可，我填进 <code>cabinets.yaml</code> / <code>board_config.yaml</code>，柜型即可启用、下料尺寸即可对账。<br>
+  最关键的三类：<b>① B#1 背板入槽量 + B#2 层板前缩 + B#3 dado</b>（最后几个精确扣减）<b>② B#5 每材料板材规格</b>（决定排版利用率）<b>③ B#7 / D 节 水槽柜部件表</b>。
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,724 @@
+{
+  "$defs": {
+    "Blocker": {
+      "description": "A reason something cannot proceed. `owner` decides who must fix it.",
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "owner": {
+          "title": "Owner",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Field"
+        }
+      },
+      "required": [
+        "code",
+        "owner",
+        "message"
+      ],
+      "title": "Blocker",
+      "type": "object"
+    },
+    "CabinetRecord": {
+      "properties": {
+        "cabinet_id": {
+          "title": "Cabinet Id",
+          "type": "string"
+        },
+        "source_cabinet_id": {
+          "title": "Source Cabinet Id",
+          "type": "string"
+        },
+        "cabinet_code": {
+          "title": "Cabinet Code",
+          "type": "string"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "width": {
+          "title": "Width",
+          "type": "number"
+        },
+        "depth": {
+          "title": "Depth",
+          "type": "number"
+        },
+        "height": {
+          "title": "Height",
+          "type": "number"
+        },
+        "panels": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Panels",
+          "type": "array"
+        },
+        "finish": {
+          "default": "",
+          "title": "Finish",
+          "type": "string"
+        },
+        "attributes": {
+          "additionalProperties": true,
+          "title": "Attributes",
+          "type": "object"
+        }
+      },
+      "required": [
+        "cabinet_id",
+        "source_cabinet_id",
+        "cabinet_code",
+        "type",
+        "width",
+        "depth",
+        "height"
+      ],
+      "title": "CabinetRecord",
+      "type": "object"
+    },
+    "CutBlock": {
+      "description": "Stage-3 unit: pieces of one length, side by side, ripped from a strip block.\n\nAll pieces share `length` (one crosscut frees the block); their widths sum within\nthe strip's rip width. A block with a single piece is the degenerate 2-stage case.",
+      "properties": {
+        "length": {
+          "title": "Length",
+          "type": "number"
+        },
+        "pieces": {
+          "items": {
+            "$ref": "#/$defs/CutPiece"
+          },
+          "title": "Pieces",
+          "type": "array"
+        }
+      },
+      "required": [
+        "length"
+      ],
+      "title": "CutBlock",
+      "type": "object"
+    },
+    "CutGroup": {
+      "description": "Phase A: grouping by material/thickness/finish/sheet. Phase B will add the\nstack_efficiency nesting/layout payload.",
+      "properties": {
+        "group_id": {
+          "title": "Group Id",
+          "type": "string"
+        },
+        "material": {
+          "title": "Material",
+          "type": "string"
+        },
+        "thickness": {
+          "title": "Thickness",
+          "type": "number"
+        },
+        "finish": {
+          "title": "Finish",
+          "type": "string"
+        },
+        "sheet_size": {
+          "title": "Sheet Size",
+          "type": "string"
+        },
+        "panels": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Panels",
+          "type": "array"
+        }
+      },
+      "required": [
+        "group_id",
+        "material",
+        "thickness",
+        "finish",
+        "sheet_size"
+      ],
+      "title": "CutGroup",
+      "type": "object"
+    },
+    "CutPiece": {
+      "description": "One physical panel placed on a strip (cut dimensions, mm).\n\nCarries material/thickness/finish so pieces from many panels — and many orders\nin a batch — can be grouped uniformly without the source PanelBOM.",
+      "properties": {
+        "panel_id": {
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "cabinet_id": {
+          "title": "Cabinet Id",
+          "type": "string"
+        },
+        "order_id": {
+          "default": "",
+          "title": "Order Id",
+          "type": "string"
+        },
+        "material": {
+          "title": "Material",
+          "type": "string"
+        },
+        "thickness": {
+          "title": "Thickness",
+          "type": "number"
+        },
+        "finish": {
+          "title": "Finish",
+          "type": "string"
+        },
+        "length": {
+          "title": "Length",
+          "type": "number"
+        },
+        "width": {
+          "title": "Width",
+          "type": "number"
+        }
+      },
+      "required": [
+        "panel_id",
+        "name",
+        "cabinet_id",
+        "material",
+        "thickness",
+        "finish",
+        "length",
+        "width"
+      ],
+      "title": "CutPiece",
+      "type": "object"
+    },
+    "CutSheet": {
+      "description": "One bin ripped into strips: a fresh stock sheet, or a recovered offcut.",
+      "properties": {
+        "sheet_no": {
+          "title": "Sheet No",
+          "type": "integer"
+        },
+        "sheet_size": {
+          "title": "Sheet Size",
+          "type": "string"
+        },
+        "from_offcut_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From Offcut Id"
+        },
+        "pattern_id": {
+          "default": "",
+          "title": "Pattern Id",
+          "type": "string"
+        },
+        "usable_width": {
+          "title": "Usable Width",
+          "type": "number"
+        },
+        "usable_length": {
+          "default": 0.0,
+          "title": "Usable Length",
+          "type": "number"
+        },
+        "used_width": {
+          "title": "Used Width",
+          "type": "number"
+        },
+        "offcut_width": {
+          "title": "Offcut Width",
+          "type": "number"
+        },
+        "offcut_reusable": {
+          "title": "Offcut Reusable",
+          "type": "boolean"
+        },
+        "strips": {
+          "items": {
+            "$ref": "#/$defs/CutStrip"
+          },
+          "title": "Strips",
+          "type": "array"
+        }
+      },
+      "required": [
+        "sheet_no",
+        "sheet_size",
+        "usable_width",
+        "used_width",
+        "offcut_width",
+        "offcut_reusable"
+      ],
+      "title": "CutSheet",
+      "type": "object"
+    },
+    "CutStrip": {
+      "description": "A rip-width strip crosscut into blocks (stage 2), each block ripped into pieces\nof that block's length (stage 3) — the 3-stage guillotine structure.",
+      "properties": {
+        "strip_no": {
+          "title": "Strip No",
+          "type": "integer"
+        },
+        "rip_width": {
+          "title": "Rip Width",
+          "type": "number"
+        },
+        "usable_length": {
+          "title": "Usable Length",
+          "type": "number"
+        },
+        "used_length": {
+          "title": "Used Length",
+          "type": "number"
+        },
+        "offcut_length": {
+          "title": "Offcut Length",
+          "type": "number"
+        },
+        "offcut_reusable": {
+          "title": "Offcut Reusable",
+          "type": "boolean"
+        },
+        "skip_trim": {
+          "default": false,
+          "title": "Skip Trim",
+          "type": "boolean"
+        },
+        "blocks": {
+          "items": {
+            "$ref": "#/$defs/CutBlock"
+          },
+          "title": "Blocks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "strip_no",
+        "rip_width",
+        "usable_length",
+        "used_length",
+        "offcut_length",
+        "offcut_reusable"
+      ],
+      "title": "CutStrip",
+      "type": "object"
+    },
+    "CuttingPattern": {
+      "description": "A distinct sheet layout cut over N stock sheets (book cutting).\n\nThe layout is identical across the repeats; only the panel labels differ per\nsheet. `books` is the stack height of each saw pass (<= max_stack), e.g. [4, 1]\nmeans cut 4 sheets stacked, then 1 — the industry-standard pattern×repeat×book form.",
+      "properties": {
+        "pattern_id": {
+          "title": "Pattern Id",
+          "type": "string"
+        },
+        "repeat_count": {
+          "title": "Repeat Count",
+          "type": "integer"
+        },
+        "books": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Books",
+          "type": "array"
+        },
+        "sheet_nos": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Sheet Nos",
+          "type": "array"
+        },
+        "layout": {
+          "items": {
+            "$ref": "#/$defs/PatternStrip"
+          },
+          "title": "Layout",
+          "type": "array"
+        }
+      },
+      "required": [
+        "pattern_id",
+        "repeat_count",
+        "books",
+        "sheet_nos"
+      ],
+      "title": "CuttingPattern",
+      "type": "object"
+    },
+    "CuttingPlan": {
+      "properties": {
+        "objective": {
+          "default": "waste",
+          "title": "Objective",
+          "type": "string"
+        },
+        "stages": {
+          "default": 3,
+          "title": "Stages",
+          "type": "integer"
+        },
+        "sheets_total": {
+          "default": 0,
+          "title": "Sheets Total",
+          "type": "integer"
+        },
+        "fresh_sheets": {
+          "default": 0,
+          "title": "Fresh Sheets",
+          "type": "integer"
+        },
+        "offcut_sheets": {
+          "default": 0,
+          "title": "Offcut Sheets",
+          "type": "integer"
+        },
+        "groups": {
+          "items": {
+            "$ref": "#/$defs/CuttingPlanGroup"
+          },
+          "title": "Groups",
+          "type": "array"
+        }
+      },
+      "title": "CuttingPlan",
+      "type": "object"
+    },
+    "CuttingPlanGroup": {
+      "description": "Sheets for one material + thickness + finish group.",
+      "properties": {
+        "group_id": {
+          "title": "Group Id",
+          "type": "string"
+        },
+        "material": {
+          "title": "Material",
+          "type": "string"
+        },
+        "thickness": {
+          "title": "Thickness",
+          "type": "number"
+        },
+        "finish": {
+          "title": "Finish",
+          "type": "string"
+        },
+        "sheet_size": {
+          "title": "Sheet Size",
+          "type": "string"
+        },
+        "sheets_total": {
+          "title": "Sheets Total",
+          "type": "integer"
+        },
+        "fresh_sheets": {
+          "default": 0,
+          "title": "Fresh Sheets",
+          "type": "integer"
+        },
+        "offcut_sheets": {
+          "default": 0,
+          "title": "Offcut Sheets",
+          "type": "integer"
+        },
+        "distinct_patterns": {
+          "default": 0,
+          "title": "Distinct Patterns",
+          "type": "integer"
+        },
+        "pieces_total": {
+          "title": "Pieces Total",
+          "type": "integer"
+        },
+        "utilization": {
+          "title": "Utilization",
+          "type": "number"
+        },
+        "patterns": {
+          "items": {
+            "$ref": "#/$defs/CuttingPattern"
+          },
+          "title": "Patterns",
+          "type": "array"
+        },
+        "sheets": {
+          "items": {
+            "$ref": "#/$defs/CutSheet"
+          },
+          "title": "Sheets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "group_id",
+        "material",
+        "thickness",
+        "finish",
+        "sheet_size",
+        "sheets_total",
+        "pieces_total",
+        "utilization"
+      ],
+      "title": "CuttingPlanGroup",
+      "type": "object"
+    },
+    "EdgeBandingItem": {
+      "properties": {
+        "panel_id": {
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "edges": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Edges",
+          "type": "array"
+        },
+        "banding": {
+          "title": "Banding",
+          "type": "string"
+        },
+        "thickness": {
+          "default": 1.0,
+          "title": "Thickness",
+          "type": "number"
+        }
+      },
+      "required": [
+        "panel_id",
+        "edges",
+        "banding"
+      ],
+      "title": "EdgeBandingItem",
+      "type": "object"
+    },
+    "PanelBOM": {
+      "properties": {
+        "panel_id": {
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "cabinet_id": {
+          "title": "Cabinet Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "length": {
+          "title": "Length",
+          "type": "number"
+        },
+        "width": {
+          "title": "Width",
+          "type": "number"
+        },
+        "thickness": {
+          "title": "Thickness",
+          "type": "number"
+        },
+        "cut_length": {
+          "title": "Cut Length",
+          "type": "number"
+        },
+        "cut_width": {
+          "title": "Cut Width",
+          "type": "number"
+        },
+        "quantity": {
+          "title": "Quantity",
+          "type": "integer"
+        },
+        "material": {
+          "title": "Material",
+          "type": "string"
+        },
+        "finish": {
+          "title": "Finish",
+          "type": "string"
+        },
+        "grain_direction": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grain Direction"
+        },
+        "edge_banding": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Edge Banding",
+          "type": "array"
+        },
+        "production_note": {
+          "default": "",
+          "title": "Production Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "panel_id",
+        "cabinet_id",
+        "name",
+        "length",
+        "width",
+        "thickness",
+        "cut_length",
+        "cut_width",
+        "quantity",
+        "material",
+        "finish"
+      ],
+      "title": "PanelBOM",
+      "type": "object"
+    },
+    "PatternStrip": {
+      "description": "One rip of a cutting pattern's shared layout (geometry only, no panel ids).",
+      "properties": {
+        "rip_width": {
+          "title": "Rip Width",
+          "type": "number"
+        },
+        "crosscuts": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Crosscuts",
+          "type": "array"
+        },
+        "skip_trim": {
+          "default": false,
+          "title": "Skip Trim",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "rip_width",
+        "crosscuts"
+      ],
+      "title": "PatternStrip",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "work_order_id": {
+      "title": "Work Order Id",
+      "type": "string"
+    },
+    "source_order_id": {
+      "title": "Source Order Id",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "contract_version": {
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "input_fingerprint": {
+      "title": "Input Fingerprint",
+      "type": "string"
+    },
+    "cabinets": {
+      "items": {
+        "$ref": "#/$defs/CabinetRecord"
+      },
+      "title": "Cabinets",
+      "type": "array"
+    },
+    "panels": {
+      "items": {
+        "$ref": "#/$defs/PanelBOM"
+      },
+      "title": "Panels",
+      "type": "array"
+    },
+    "cut_list": {
+      "items": {
+        "$ref": "#/$defs/CutGroup"
+      },
+      "title": "Cut List",
+      "type": "array"
+    },
+    "cutting_plan": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CuttingPlan"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "edge_banding_list": {
+      "items": {
+        "$ref": "#/$defs/EdgeBandingItem"
+      },
+      "title": "Edge Banding List",
+      "type": "array"
+    },
+    "blockers": {
+      "items": {
+        "$ref": "#/$defs/Blocker"
+      },
+      "title": "Blockers",
+      "type": "array"
+    },
+    "filtered_non_cabinets": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Filtered Non Cabinets",
+      "type": "array"
+    }
+  },
+  "required": [
+    "work_order_id",
+    "source_order_id",
+    "status",
+    "contract_version",
+    "input_fingerprint"
+  ],
+  "title": "ProductionEngineeringPackage",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "x-contractVersion": "module2.v1"
+}

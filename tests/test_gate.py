@@ -73,6 +73,22 @@ def test_invalid_dimension_blocks():
     assert "INVALID_DIMENSION" in _codes(validate_gate(make_order(cabinet=cab)))
 
 
+def test_null_material_blocks_like_missing():
+    # round1 maturity: material/finish nullable in the type, but the gate requires them
+    cab = CabinetInput(
+        cabinet_id="C001", cabinet_code="B302435", type="base",
+        width=30, depth=24, height=34.5, quantity=1, material=None, finish=None,
+    )
+    assert "MISSING_FIELD" in _codes(validate_gate(make_order(cabinet=cab)))
+
+
+def test_non_inches_units_blocks():
+    order = make_order()
+    order.units = "mm"
+    codes = _codes(validate_gate(order))
+    assert "UNSUPPORTED_UNITS" in codes
+
+
 def test_invalid_quantity_blocks():
     cab = CabinetInput(
         cabinet_id="C001",

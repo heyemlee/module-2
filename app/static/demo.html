@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 2 · 生产工程演示</title>
+<style>
+  :root{
+    --ink:#1a1d21;--muted:#6b7280;--line:#e7eaee;--soft:#f4f6f8;--card:#fff;
+    --blu:#2f5fd0;--blu-s:#eaf0fd;--grn:#1f8a4c;--grn-s:#e7f5ec;--stop:#cf3a3a;--stop-s:#fcecec;
+    --amber:#b07d12;--amber-s:#fbf3e0;--base:#3a6fd0;--wall:#2f9e7a;--tall:#a3568f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#eef1f5,#f4f6f8 220px);color:var(--ink);
+    font:14.5px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 18px 80px}
+  .hero{margin-bottom:6px}
+  .hero h1{font-size:26px;margin:0 0 4px;letter-spacing:.2px}
+  .hero .sub{color:var(--muted);font-size:14px}
+  .flow{display:flex;align-items:center;gap:8px;margin:14px 0 18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+  .flow .step{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 13px;font-weight:600;color:var(--ink)}
+  .flow .ar{color:#c0c6cf}
+  .links{font-size:12.5px;margin-bottom:18px}
+  .links a{color:var(--blu);text-decoration:none;margin-right:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:14px 0;
+    box-shadow:0 1px 3px rgba(20,30,50,.05)}
+  .ttl{display:flex;align-items:center;gap:10px;margin:0 0 4px;font-size:16px;font-weight:700}
+  .ttl .num{width:26px;height:26px;border-radius:8px;background:var(--ink);color:#fff;display:flex;
+    align-items:center;justify-content:center;font-size:14px}
+  .ttl .tag{font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;margin-left:auto}
+  .tag.rough{background:var(--amber-s);color:var(--amber)}
+  .tag.final{background:var(--grn-s);color:var(--grn)}
+  .lead{color:var(--muted);font-size:13px;margin:0 0 12px}
+  .samples{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .chip{font-size:12.5px;padding:6px 13px;border:1px solid var(--line);border-radius:999px;background:var(--soft);cursor:pointer}
+  .chip:hover{background:var(--blu-s);border-color:#bcd0f5}
+  .cabs{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+  .cab{border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:#fff;position:relative}
+  .cab .k{display:inline-block;font-size:10.5px;font-weight:700;color:#fff;padding:1px 8px;border-radius:999px;margin-bottom:5px}
+  .cab.BASE .k{background:var(--base)}.cab.WALL .k{background:var(--wall)}.cab.TALL .k{background:var(--tall)}
+  .cab .code{font-weight:700;font-size:14px}
+  .cab .dim{color:var(--muted);font-size:12px;margin-top:2px}
+  .cab .loc{color:#9aa0a8;font-size:11px;margin-top:3px}
+  .form{display:flex;gap:18px 26px;flex-wrap:wrap;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:4px}
+  .fld label{font-size:12.5px;font-weight:600;color:#444}
+  select,input[type=text]{padding:7px 10px;border:1px solid #cdd3da;border-radius:8px;font-size:13.5px;background:#fff;min-width:200px}
+  .appr{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px}
+  .appr label{font-size:13px;display:flex;gap:6px;align-items:center;font-weight:500}
+  .adv{margin-top:12px;font-size:12.5px}
+  .adv summary{cursor:pointer;color:var(--blu)}
+  .adv pre{background:#0f1320;color:#cdd6f4;border-radius:8px;padding:11px;font-size:11px;overflow:auto;margin-top:8px;max-height:240px}
+  .go{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border:none;border-radius:10px;
+    background:var(--blu);color:#fff;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(47,95,208,.25)}
+  .go:disabled{opacity:.55;box-shadow:none}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:4px 0 14px}
+  .stat{background:var(--soft);border-radius:11px;padding:12px 14px;text-align:center}
+  .stat .v{font-size:24px;font-weight:800;color:var(--blu)}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+  .badge{display:inline-block;font-size:13px;font-weight:700;padding:3px 13px;border-radius:999px}
+  .badge.ok{background:var(--grn-s);color:var(--grn)}.badge.blocked{background:var(--stop-s);color:var(--stop)}
+  .blk{background:var(--stop-s);border:1px solid #e9bcbc;border-radius:9px;padding:9px 12px;margin:7px 0;font-size:13px}
+  .blk b{color:var(--stop)}
+  .tab{display:flex;gap:6px;margin:6px 0}
+  .tab button{font-size:13px;padding:6px 14px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}
+  .tab button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .pane{display:none}.pane.on{display:block}
+  pre.sheet{background:#0f1320;color:#d6deeb;border-radius:9px;padding:13px;overflow:auto;font-size:11.5px;line-height:1.5;max-height:440px}
+  .grp{font-weight:700;font-size:13.5px;margin:12px 0 7px}
+  .grp .gm{font-weight:400;color:var(--muted);font-size:12px;margin-left:8px}
+  .sheets{display:flex;flex-wrap:wrap;gap:16px}
+  .sheetbox{text-align:center}
+  .sheetbox .cap{font-size:11px;color:var(--muted);margin-top:4px}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;font-size:11.5px;color:#555}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .modebar{display:flex;align-items:center;gap:12px;margin:8px 0 2px;flex-wrap:wrap}
+  .modebar .lbl{font-size:12.5px;color:var(--muted)}
+  .seg{display:inline-flex;border:1px solid #cdd3da;border-radius:9px;overflow:hidden}
+  .seg button{border:none;background:#fff;padding:7px 14px;font-size:13px;cursor:pointer;color:#444}
+  .seg button.on{background:var(--blu);color:#fff}
+  .modebar .note{font-size:12px;color:var(--muted)}
+  .mpat{font-size:12.5px;font-weight:700;margin:14px 0 6px;color:var(--ink)}
+  .mcards{display:flex;flex-wrap:wrap;gap:13px}
+  .mcard{border:1px solid #cdd3da;border-radius:10px;overflow:hidden;width:228px;background:#fff}
+  .mcard .mh{padding:7px 11px;font-size:12.5px;font-weight:700;color:#fff;display:flex;
+    justify-content:space-between;align-items:center;gap:8px}
+  .mcard.rip .mh{background:#2f7d57}.mcard.cross .mh{background:var(--blu)}
+  .mcard .mh .rep{font-weight:600;font-size:11px;opacity:.92}
+  .mcard .meta{display:flex;gap:10px;flex-wrap:wrap;padding:7px 11px 2px;font-size:11.5px;color:#666}
+  .mcard .meta b{color:var(--ink)}
+  .mrows{width:100%;border-collapse:collapse;font-size:12px;margin:5px 0 2px}
+  .mrows th,.mrows td{border:1px solid #e6eaef;padding:3px 8px;text-align:center}
+  .mrows th{background:#f3f5f8;color:#6b7280;font-size:10.5px}
+  .mrows td.g{background:#eaf6ee;font-weight:600}
+  .mcard .surp{padding:5px 11px 9px;font-size:11.5px;color:#666}
+  .mcard .surp b{color:var(--grn)}
+  .mnote{font-size:11.5px;color:var(--amber);background:var(--amber-s);border-radius:8px;
+    padding:7px 10px;margin:9px 0;max-width:720px}
+  .mkey{font-size:11.5px;color:var(--muted);margin:2px 0 10px;line-height:1.7}
+  .mkey b{color:var(--ink)}
+  .qcrow{display:flex;gap:10px;align-items:flex-end;margin-bottom:8px;flex-wrap:wrap}
+  .qcrow input[type=number]{min-width:90px;max-width:110px}
+  .rm{padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;color:var(--stop);font-size:13px}
+  .guide summary{cursor:pointer;color:var(--blu);font-size:13.5px;font-weight:600;user-select:none;margin-top:4px}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:10px;margin:8px 0 2px}
+  .stepc{background:var(--soft);border-radius:11px;padding:11px 13px}
+  .stepc .n{display:inline-block;width:20px;height:20px;border-radius:6px;background:var(--blu);
+    color:#fff;font-size:12px;text-align:center;line-height:20px;font-weight:700;margin-right:6px}
+  .stepc .h{font-weight:700;font-size:13.5px}
+  .stepc .d{color:var(--muted);font-size:12.5px;margin-top:5px}
+  .gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:9px 16px;margin-top:12px}
+  .gcat{grid-column:1/-1;font-weight:700;font-size:12.5px;color:var(--ink);margin-top:8px;
+    border-bottom:1px solid var(--line);padding-bottom:3px}
+  .gitem{font-size:12.5px;line-height:1.5}
+  .gitem b{color:var(--blu)}
+  .gitem .en{color:#9aa0a8;font-size:11px}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+  th,td{border:1px solid var(--line);padding:5px 8px;text-align:left}
+  th{background:var(--soft);color:var(--muted);font-size:11.5px}
+  .ph{color:var(--muted);text-align:center;padding:36px 0;font-size:13.5px}
+  .msg{font-size:12.5px;color:var(--muted);margin-left:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <h1>Module 2 · 生产工程演示</h1>
+    <div class="sub">从 Module 1 的粗估柜体，到车间能上锯的裁切方案。</div>
+  </div>
+  <div class="flow">
+    <span class="step">Module 1 粗估</span><span class="ar">→</span>
+    <span class="step">补全（选材 · 审批）</span><span class="ar">→</span>
+    <span class="step">Module 2 拆板 + 裁切</span><span class="ar">→</span>
+    <span class="step">车间</span>
+  </div>
+  <div class="links">
+    <a href="/docs" target="_blank">API 文档</a>
+    <a href="/console" target="_blank">原始 JSON 测试台</a>
+    <a href="/api/module2/construction-form" target="_blank">工厂构造填报</a>
+    <a href="/api/module2/contract" target="_blank">契约 Schema</a>
+  </div>
+
+  <!-- 0: 说明 -->
+  <div class="card guide">
+    <div class="ttl"><span class="num">?</span>快速上手</div>
+    <div class="steps">
+      <div class="stepc"><div><span class="n">1</span><span class="h">选厨房</span></div>
+        <div class="d">换示例柜体清单（Module 1 粗估输出，无材料、无审批）。</div></div>
+      <div class="stepc"><div><span class="n">2</span><span class="h">补材料 / 审批</span></div>
+        <div class="d">选板材、门板，勾三方审批——缺一不可。</div></div>
+      <div class="stepc"><div><span class="n">3</span><span class="h">提交 → 看程序</span></div>
+        <div class="d">机台程序 / 图纸 / BOM 三个视图，切换少翻板 · 省料两个方案。</div></div>
+    </div>
+    <details>
+      <summary>名词 · 字段说明</summary>
+      <div class="gloss">
+        <div class="gcat">两刀</div>
+        <div class="gitem"><b>开条</b> <span class="en">rip</span> 纵切 → 定宽</div>
+        <div class="gitem"><b>横切</b> <span class="en">crosscut</span> 横切 → 定长</div>
+        <div class="gitem"><b>翻板</b> 料转 90° 换切向 = 人工成本，越少越好</div>
+        <div class="gcat">两方案</div>
+        <div class="gitem"><b>少翻板</b> 1 翻，省人工，最贴合单推锯</div>
+        <div class="gitem"><b>省料</b> 2/3 段取最省板数，不比少翻板差</div>
+        <div class="gitem"><b>翻板/张</b> 每张板翻几次，越小越省</div>
+        <div class="gcat">机台字段</div>
+        <div class="gitem"><b>SET</b> 一屏程序，最多 10 行</div>
+        <div class="gitem"><b>WIDTH</b> 条宽</div>
+        <div class="gitem"><b>LENGTH</b> 件长</div>
+        <div class="gitem"><b>QTY</b> 件数</div>
+        <div class="gitem"><b>TRIM</b> 切头量（以机台实测为准）</div>
+        <div class="gitem"><b>SURP</b> 余料，可留库存</div>
+        <div class="gcat">板材指标</div>
+        <div class="gitem"><b>整板</b> 新开标准板</div>
+        <div class="gitem"><b>利用率</b> 排版面积 ÷ 用板面积</div>
+        <div class="gitem"><b>余料带</b> 绿虚线=可回收，灰虚线=废料</div>
+      </div>
+    </details>
+  </div>
+
+  <!-- QC: quick cut -->
+  <div class="card">
+    <div class="ttl"><span class="num" style="background:var(--grn)">⚡</span>直接裁切 · 输入尺寸即出程序</div>
+    <p class="lead">不需要柜体清单，直接填你要的宽×高（mm），选板材，点生成。</p>
+    <div id="qc-rows"></div>
+    <button onclick="addQcRow()" style="font-size:13px;padding:6px 14px;border:1px solid var(--line);border-radius:8px;background:var(--soft);cursor:pointer;margin-bottom:10px">＋ 加一行</button>
+    <div class="form" style="margin-top:4px">
+      <div class="fld"><label>材料 Material</label>
+        <select id="qc-mat">
+          <option>White Birch plywood 18mm</option>
+          <option>White melamine plywood 18mm</option>
+          <option>Maple plywood 19mm</option>
+          <option>Cleaf-LR22-19mm</option>
+        </select></div>
+      <div class="fld"><label>厚度 (mm)</label>
+        <input type="number" id="qc-thk" value="18" style="min-width:90px;max-width:100px"></div>
+      <div class="fld"><label>Finish（可留空）</label>
+        <input type="text" id="qc-fin" placeholder="e.g. SM-Blanco" style="min-width:140px"></div>
+    </div>
+    <div style="margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span class="lbl" style="font-size:12.5px;color:var(--muted)">方案</span>
+      <span class="seg" id="qc-seg">
+        <button class="on" onclick="setQcMode(2)">少翻板</button>
+        <button onclick="setQcMode(3)">省料</button>
+      </span>
+      <button class="go" id="qc-go" onclick="runQc()">生成裁切程序 ▶</button>
+      <span class="msg" id="qc-msg"></span>
+    </div>
+    <div id="qc-result" style="margin-top:16px"></div>
+  </div>
+
+  <!-- 1: Module 1 -->
+  <div class="card">
+    <div class="ttl"><span class="num">1</span>Module 1 输出 · 粗估柜体清单<span class="tag rough">销售估算 · ROUGH · 不可直接生产</span></div>
+    <p class="lead">这是 Module 1（展厅/设计）产出的样子：有柜型、柜码、粗略尺寸，但<b>还没选材、没审批</b>。换一个示例：</p>
+    <div class="samples">
+      <span class="chip" onclick="load('kitchen')">L 型厨房</span>
+      <span class="chip" onclick="load('galley')">走廊厨房</span>
+      <span class="chip" onclick="load('island')">岛台厨房</span>
+      <span class="chip" onclick="load('real')">真实订单（含填充条）</span>
+    </div>
+    <div class="cabs" id="cabs"></div>
+  </div>
+
+  <!-- 2: complete -->
+  <div class="card">
+    <div class="ttl"><span class="num">2</span>补全到生产订单<span class="tag final">→ final</span></div>
+    <p class="lead">Module 2 闸门要求：材料 / finish / 三方审批。补齐才能进生产（这一步对应 Round 2 实测/选材）。</p>
+    <div class="form">
+      <div class="fld"><label>柜体材料 Box Material</label>
+        <select id="material">
+          <option>White Birch plywood 18mm</option>
+          <option>White melamine plywood 18mm</option>
+          <option>Maple plywood 19mm</option>
+          <option>Cleaf-LR22-19mm（饰面板 2800×2065）</option>
+        </select></div>
+      <div class="fld"><label>门板 finish</label>
+        <select id="finish">
+          <option>SM-Antracita</option><option>SM-Blanco</option>
+          <option>HG-Blanco</option><option>ABC-WG 11</option><option>SYN-Nocce 01</option>
+        </select></div>
+      <div class="fld"><label>审批 Approval</label>
+        <div class="appr">
+          <label><input type="checkbox" id="a_cust" checked>客户</label>
+          <label><input type="checkbox" id="a_sales" checked>销售</label>
+          <label><input type="checkbox" id="a_design" checked>设计师</label>
+        </div></div>
+    </div>
+    <details class="adv"><summary>查看将发送给 Module 2 的 JSON（共享契约形状）</summary><pre id="json"></pre></details>
+    <div style="margin-top:14px"><button class="go" id="go" onclick="run()">提交给 Module 2 ▶</button><span class="msg" id="msg"></span></div>
+  </div>
+
+  <!-- 3: result -->
+  <div class="card">
+    <div class="ttl"><span class="num">3</span>Module 2 生产结果</div>
+    <div id="result"><div class="ph">补全后点「提交给 Module 2」，这里显示生产包 + 裁切单</div></div>
+  </div>
+</div>
+
+<script>
+// Module 1 真实输出形状：kind / code / width / depth / actualHeight / location（无 material/finish）
+const KITCHENS = {
+  kitchen:[
+    {kind:"BASE",code:"B302435",width:30,depth:24,actualHeight:34.5,location:"UNDER_WINDOW"},
+    {kind:"BASE",code:"B242435",width:24,depth:24,actualHeight:34.5,location:"ON_MAIN_RUN"},
+    {kind:"BASE",code:"B182435",width:18,depth:24,actualHeight:34.5,location:"ON_MAIN_RUN"},
+    {kind:"WALL",code:"W301230",width:30,depth:12,actualHeight:30,location:"BACK_SIDE"},
+    {kind:"WALL",code:"W241230",width:24,depth:12,actualHeight:30,location:"BACK_SIDE"},
+    {kind:"TALL",code:"T127224",width:12,depth:24,actualHeight:84,location:"LEFT_SIDE"},
+  ],
+  galley:[
+    {kind:"BASE",code:"B362435",width:36,depth:24,actualHeight:34.5,location:"LEFT_SIDE"},
+    {kind:"BASE",code:"B302435",width:30,depth:24,actualHeight:34.5,location:"LEFT_SIDE"},
+    {kind:"WALL",code:"W361230",width:36,depth:12,actualHeight:30,location:"LEFT_SIDE"},
+    {kind:"WALL",code:"W301230",width:30,depth:12,actualHeight:30,location:"RIGHT_SIDE"},
+    {kind:"WALL",code:"W241230",width:24,depth:12,actualHeight:30,location:"RIGHT_SIDE"},
+  ],
+  island:[
+    {kind:"BASE",code:"B362435",width:36,depth:24,actualHeight:34.5,location:"ON_ISLAND"},
+    {kind:"BASE",code:"B362435",width:36,depth:24,actualHeight:34.5,location:"ON_ISLAND"},
+    {kind:"BASE",code:"B242435",width:24,depth:24,actualHeight:34.5,location:"ON_MAIN_RUN"},
+    {kind:"WALL",code:"W301230",width:30,depth:12,actualHeight:30,location:"BACK_SIDE"},
+    {kind:"TALL",code:"T247284",width:24,depth:24,actualHeight:84,location:"RIGHT_SIDE"},
+  ],
+  // 真实工厂订单形状：真实柜码（FDB/3DRB/W/TP）+ 填充条/装饰板/踢脚（深度0，会被过滤）。
+  real:[
+    {kind:"BASE",code:"FDB42T", width:42, depth:24, actualHeight:34.5, location:"地柜"},
+    {kind:"BASE",code:"3DRB36T",width:36, depth:24, actualHeight:34.5, location:"抽屉柜"},
+    {kind:"WALL",code:"W3636T", width:36, depth:12, actualHeight:36,   location:"吊柜"},
+    {kind:"TALL",code:"TP247284",width:24,depth:24, actualHeight:84,   location:"高柜"},
+    {kind:"FILLER",code:"TK9",   width:4.5,depth:0,  actualHeight:96,   location:"踢脚板"},
+    {kind:"FILLER",code:"WP1360",width:13, depth:0,  actualHeight:60,   location:"装饰板"},
+    {kind:"FILLER",code:"BF0335",width:3,  depth:0,  actualHeight:35,   location:"填充条"},
+  ],
+};
+let M1 = [];
+function load(name){M1 = KITCHENS[name].map((c,i)=>({...c,cabinet_id:"C"+(i+1)}));renderM1();updateJson();}
+function renderM1(){
+  document.getElementById('cabs').innerHTML = M1.map(c=>`
+    <div class="cab ${c.kind}">
+      <span class="k">${c.kind}</span>
+      <div class="code">${c.code}</div>
+      <div class="dim">${c.width}″W × ${c.depth}″D × ${c.actualHeight}″H</div>
+      <div class="loc">${c.location||''}</div>
+    </div>`).join('');
+}
+// 适配器：Module 1 形状 → Module 2 共享契约（kind→type、actualHeight→height、补 material/finish/approval/stage）
+function toModule2(){
+  const mat = document.getElementById('material').value.replace(/（.*$/,'').trim();
+  const fin = document.getElementById('finish').value;
+  return {
+    order_id:"ORD-DEMO-"+Date.now().toString().slice(-5),
+    project:{customer_name:"演示客户"},
+    approval:{customer_confirmed:document.getElementById('a_cust').checked,
+      sales_confirmed:document.getElementById('a_sales').checked,
+      designer_approved:document.getElementById('a_design').checked},
+    source:{stage:"final",cabinet_list_version:"v1"},
+    units:"inches",
+    cabinets:M1.map(c=>({cabinet_id:c.cabinet_id,cabinet_code:c.code,type:c.kind.toLowerCase(),
+      width:c.width,depth:c.depth,height:c.actualHeight,quantity:1,material:mat,finish:fin,
+      attributes:{location:c.location}}))
+  };
+}
+function updateJson(){document.getElementById('json').textContent=JSON.stringify(toModule2(),null,2);}
+['material','finish','a_cust','a_sales','a_design'].forEach(id=>{
+  document.addEventListener('change',e=>{if(e.target.id===id)updateJson();});});
+function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+// ---- 裁切图纸：把每张板画成按比例缩放的 SVG，板件按部件上色、标尺寸 ----
+const PART_COLOR={side:'#3a6fd0',top:'#2f9e7a',bottom:'#54b08a',back:'#a3568f',
+  stretcher:'#d98b2b',adjustable_shelf:'#7d8a9c',fixed_shelf:'#5a6b80'};
+const PART_CN={side:'侧板',top:'顶板',bottom:'底板',back:'背板',stretcher:'拉档',
+  adjustable_shelf:'活动层板',fixed_shelf:'固定层板'};
+function partColor(n){const k=String(n||'').toLowerCase();if(PART_COLOR[k])return PART_COLOR[k];
+  let h=0;for(const ch of k)h=(h*31+ch.charCodeAt(0))>>>0;return `hsl(${h%360} 42% 56%)`;}
+function label(n){const k=String(n||'').toLowerCase();return PART_CN[k]||n;}
+
+function drawSheet(sh,scale){
+  const W=sh.usable_width||0,L=sh.usable_length||0;
+  const pw=W*scale,ph=L*scale;
+  let r=`<svg width="${pw.toFixed(0)}" height="${ph.toFixed(0)}" viewBox="0 0 ${pw.toFixed(1)} ${ph.toFixed(1)}" `+
+    `style="background:#fafbfc;border:1px solid #c4cad3;border-radius:3px;display:block">`;
+  let x=0;
+  for(const st of (sh.strips||[])){
+    const sw=st.rip_width*scale;
+    let y=0;
+    for(const bl of (st.blocks||[])){
+      const bh=bl.length*scale;let px=x;
+      for(const pc of (bl.pieces||[])){
+        const pcw=pc.width*scale,col=partColor(pc.name);
+        r+=`<rect x="${px.toFixed(1)}" y="${y.toFixed(1)}" width="${pcw.toFixed(1)}" height="${bh.toFixed(1)}" `+
+          `fill="${col}" stroke="#fff" stroke-width="0.8"><title>${esc(label(pc.name))} ${esc(pc.panel_id)}\n${Math.round(pc.length)}×${Math.round(pc.width)}mm</title></rect>`;
+        if(pcw>34&&bh>18){const cx=px+pcw/2,cy=y+bh/2;
+          r+=`<text x="${cx.toFixed(1)}" y="${(cy-2).toFixed(1)}" font-size="8.5" font-weight="700" fill="#fff" text-anchor="middle">${esc(label(pc.name))}</text>`+
+             `<text x="${cx.toFixed(1)}" y="${(cy+8).toFixed(1)}" font-size="7.5" fill="#fff" opacity=".92" text-anchor="middle">${Math.round(pc.length)}×${Math.round(pc.width)}</text>`;}
+        px+=pcw;
+      }
+      y+=bh;
+    }
+    if(st.offcut_length>0&&!st.skip_trim){const oy=(L-st.offcut_length)*scale,oh=st.offcut_length*scale;
+      r+=`<rect x="${x.toFixed(1)}" y="${oy.toFixed(1)}" width="${sw.toFixed(1)}" height="${oh.toFixed(1)}" `+
+        `fill="${st.offcut_reusable?'#e7f3ec':'#eef0f3'}" stroke="${st.offcut_reusable?'#9ccfb0':'#c4cad3'}" stroke-width="0.6" stroke-dasharray="2 2">`+
+        `<title>条余料 ${Math.round(st.rip_width)}×${Math.round(st.offcut_length)}mm${st.offcut_reusable?' · 可回收':''}</title></rect>`;}
+    x+=sw;
+  }
+  if(sh.offcut_width>0){const ox=(W-sh.offcut_width)*scale,ow=sh.offcut_width*scale;
+    r+=`<rect x="${ox.toFixed(1)}" y="0" width="${ow.toFixed(1)}" height="${ph.toFixed(1)}" `+
+      `fill="${sh.offcut_reusable?'#e7f3ec':'#eef0f3'}" stroke="${sh.offcut_reusable?'#9ccfb0':'#c4cad3'}" stroke-width="0.6" stroke-dasharray="2 2">`+
+      `<title>边余料 ${Math.round(sh.offcut_width)}×${Math.round(L)}mm${sh.offcut_reusable?' · 可回收':''}</title></rect>`;}
+  return r+'</svg>';
+}
+
+function legendHtml(g){
+  const names=new Set();
+  for(const s of (g.sheets||[]))for(const st of (s.strips||[]))for(const b of (st.blocks||[]))for(const p of (b.pieces||[]))names.add(p.name);
+  if(!names.size)return '';
+  return `<div class="legend">`+[...names].map(n=>`<span><i style="background:${partColor(n)}"></i>${esc(label(n))}</span>`).join('')+
+    `<span><i style="background:#e7f3ec;border:1px dashed #9ccfb0"></i>可回收余料</span>`+
+    `<span><i style="background:#eef0f3;border:1px dashed #c4cad3"></i>废料</span></div>`;
+}
+
+function renderSheets(cp){
+  if(!cp.groups||!cp.groups.length)return '<div class="ph">无裁切数据</div>';
+  let html='';
+  for(const g of cp.groups){
+    const maxLen=Math.max(1,...g.sheets.map(s=>s.usable_length||0));
+    const scale=232/maxLen;
+    html+=`<div class="grp">${esc(g.material)} · ${g.thickness}mm`+
+      `<span class="gm">${esc(g.finish||'')} · 板 ${esc(g.sheet_size)} · 利用率 ${g.utilization}% · ${g.fresh_sheets} 整板`+
+      `${g.offcut_sheets?` + ${g.offcut_sheets} 余料板`:''} · ${g.distinct_patterns} 种图案</span></div>`;
+    html+='<div class="sheets">';
+    for(const sh of g.sheets){
+      const cap=sh.from_offcut_id?`♻ 余料板 #${sh.sheet_no}`:`板 #${sh.sheet_no}${sh.pattern_id?` · ${esc(sh.pattern_id)}`:''}`;
+      html+=`<div class="sheetbox">${drawSheet(sh,scale)}<div class="cap">${cap}</div></div>`;
+    }
+    html+='</div>'+legendHtml(g);
+  }
+  return html;
+}
+
+// ---- 机台程序：把方案摊平成这台「要人翻」单推锯能直接敲的 开条/横切 SET 卡 ----
+function pi(v){return Math.round(v);}
+function tally(nums){const m=new Map();for(const v of nums)m.set(v,(m.get(v)||0)+1);
+  return [...m.entries()].sort((a,b)=>b[0]-a[0]);}      // [[value,count]] 大→小
+function chunk(a,n){const o=[];for(let i=0;i<a.length;i+=n)o.push(a.slice(i,i+n));return o;}
+function sheetTrim(sh){const nom=String(sh.sheet_size||'').split('x').map(Number);
+  return (nom.length===2&&nom[0]>sh.usable_width)?pi((nom[0]-sh.usable_width)/2):0;}
+function rowsTable(rows){return `<table class="mrows"><thead><tr><th>#</th><th>LENGTH</th><th>QTY</th></tr></thead><tbody>`+
+  rows.map((r,i)=>`<tr><td>${i+1}</td><td class="g">${r[0]}</td><td class="g">${r[1]}</td></tr>`).join('')+`</tbody></table>`;}
+
+let SETNO=0;
+function ripCards(sh,rep,trim){
+  const widths=tally(sh.strips.map(st=>pi(st.rip_width)));
+  const stock=`${pi(sh.usable_width)}×${pi(sh.usable_length)}`;
+  let out='';
+  chunk(widths,10).forEach((rows,ci)=>{SETNO++;
+    out+=`<div class="mcard rip"><div class="mh"><span>SET ${SETNO} · 开条 RIP${ci?' 续':''}</span><span class="rep">×${rep} 张</span></div>`+
+      `<div class="meta"><span>母板 <b>${stock}</b></span><span>TRIM <b>${trim}</b></span><span style="color:#2f7d57">LENGTH=条宽</span></div>`+
+      rowsTable(rows);
+    if(ci===0&&sh.offcut_width>0)
+      out+=`<div class="surp">余料带 ${pi(sh.offcut_width)}×${pi(sh.usable_length)} · ${sh.offcut_reusable?'<b>留用→库存</b>':'(废)'}</div>`;
+    out+=`</div>`;});
+  return out;
+}
+function crossCards(sh,rep,trim){
+  const byW=new Map();
+  for(const st of sh.strips){const w=pi(st.rip_width);
+    if(!byW.has(w))byW.set(w,{lens:[],len:pi(st.usable_length),off:st.offcut_length,reuse:st.offcut_reusable});
+    const rec=byW.get(w);for(const b of st.blocks)rec.lens.push(pi(b.length));}
+  let out='';
+  for(const [w,rec] of [...byW.entries()].sort((a,b)=>b[0]-a[0])){
+    chunk(tally(rec.lens),10).forEach((rows,ci)=>{SETNO++;
+      out+=`<div class="mcard cross"><div class="mh"><span>SET ${SETNO} · 横切 CROSS${ci?' 续':''}</span><span class="rep">×${rep} 张</span></div>`+
+        `<div class="meta"><span>WIDTH <b>${w}</b></span><span>料长 <b>${rec.len}</b></span><span>TRIM <b>${trim}</b></span></div>`+
+        rowsTable(rows);
+      if(ci===0&&rec.off>0)
+        out+=`<div class="surp">SURP 余 ${pi(rec.off)} · ${rec.reuse?'<b>留用</b>':'(废)'}</div>`;
+      out+=`</div>`;});
+  }
+  return out;
+}
+function planPaired(cp){return cp.groups.some(g=>g.sheets.some(s=>s.strips.some(st=>st.blocks.some(b=>b.pieces.length>1))));}
+function renderMachine(cp){
+  if(!cp.groups||!cp.groups.length)return '<div class="ph">无裁切数据</div>';
+  SETNO=0;let html='';
+  html+=`<div class="mnote">这是这台「要人翻」单推锯要敲的程序：先按<b>开条卡</b>把整板纵切成条 →翻 90°→ 按<b>横切卡</b>把每种宽度的条切成定长件。每张程序卡 ≤10 行,对应你屏上一个 SET。LENGTH/数量我们已排好、余料(SURP)已算。</div>`;
+  html+=`<div class="mkey">字段对照：<b>SET</b> 程序号 · <b>母板/料长</b> 喂入料尺寸 · <b>WIDTH</b> 条宽 · <b>LENGTH</b> 这趟要切的尺寸(开条=条宽,横切=件长) · <b>QTY</b> 件数 · <b>TRIM</b> 切头量 · <b>SURP/余料带</b> 剩料</div>`;
+  for(const g of cp.groups){
+    html+=`<div class="grp">${esc(g.material)} · ${g.thickness}mm<span class="gm">${esc(g.finish||'')} · ${g.fresh_sheets} 整板 · ${g.distinct_patterns} 图案 · 利用率 ${g.utilization}%</span></div>`;
+    const byNo={};g.sheets.forEach(s=>byNo[s.sheet_no]=s);
+    const pats=(g.patterns&&g.patterns.length)?g.patterns:g.sheets.map(s=>({repeat_count:1,sheet_nos:[s.sheet_no]}));
+    for(const pat of pats){
+      const rep=byNo[pat.sheet_nos[0]];const trim=sheetTrim(rep);
+      const paired=rep.strips.some(st=>st.blocks.some(b=>b.pieces.length>1));
+      html+=`<div class="mpat">图案 ${esc(rep.pattern_id||('板#'+rep.sheet_no))} · 切 ${pat.repeat_count} 张 · 翻板 ${paired?2:1} 次/张</div>`;
+      html+=`<div class="mcards">`+ripCards(rep,pat.repeat_count,trim)+crossCards(rep,pat.repeat_count,trim)+`</div>`;
+      if(paired)html+=`<div class="mnote">本图案有「同长拼宽」的块(省料模式)：横切后要把这些块再翻一次、二次开条分件 → 多 1 次翻板。切到「少翻板」可消除。</div>`;
+    }
+  }
+  return html;
+}
+
+let WID=null, MODE=2;            // 2 = 少翻板(默认) | 3 = 省料
+function setMode(m){if(MODE===m)return;MODE=m;showResult();}
+
+async function run(){
+  const go=document.getElementById('go'),msg=document.getElementById('msg'),res=document.getElementById('result');
+  go.disabled=true;msg.textContent='提交中…';res.innerHTML='<div class="ph">处理中…</div>';
+  try{
+    const order=toModule2();
+    const r=await fetch('/api/module2/production-packages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(order)});
+    const body=await r.json();WID=body.data&&body.data.work_order_id;
+    const blocked=body.status!=='engineering_ready';
+    if(blocked||!WID){
+      let html=`<span class="badge blocked">${esc(body.status)}</span>`;
+      if(body.blockers&&body.blockers.length)
+        html+=body.blockers.map(b=>`<div class="blk"><b>${esc(b.code)}</b> · owner=${esc(b.owner)} — ${esc(b.message)}</div>`).join('');
+      res.innerHTML=html;msg.textContent='';go.disabled=false;return;
+    }
+    await showResult();
+  }catch(e){res.innerHTML='<div class="blk">请求失败: '+esc(e.message)+'</div>';msg.textContent='';}
+  go.disabled=false;
+}
+
+// 拉取当前方案(MODE)下的裁切计划 + BOM,渲染统计 / 方案切换 / 三个 Tab。
+async function showResult(){
+  const msg=document.getElementById('msg'),res=document.getElementById('result');
+  msg.textContent='计算中…';
+  const d=(await (await fetch('/api/module2/production-packages/'+WID)).json()).data;
+  const cp=(await (await fetch('/api/module2/production-packages/'+WID+'/plan?stages='+MODE+'&objective=waste')).json()).data;
+  const pat=cp.groups.reduce((a,g)=>a+g.distinct_patterns,0);
+  const flips=planPaired(cp)?2:1;
+  let html=`<span class="badge ok">engineering_ready</span> <span class="msg">work_order_id ${esc(WID)}</span>`;
+  html+=`<div class="stats">
+    <div class="stat"><div class="v">${d.cabinets.length}</div><div class="l">柜体</div></div>
+    <div class="stat"><div class="v">${d.panels.length}</div><div class="l">板件种类</div></div>
+    <div class="stat"><div class="v">${cp.fresh_sheets}</div><div class="l">整板张数</div></div>
+    <div class="stat"><div class="v">${pat}</div><div class="l">裁切图案</div></div>
+    <div class="stat"><div class="v">${flips}</div><div class="l">翻板/张</div></div>
+  </div>`;
+  if(d.filtered_non_cabinets && d.filtered_non_cabinets.length)
+    html+=`<div style="margin:8px 0;padding:9px 13px;background:var(--soft);border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--muted)">已过滤 <b style="color:var(--ink)">${d.filtered_non_cabinets.length}</b> 个非柜体（填充条/装饰板/踢脚，不拆板不裁切）：${d.filtered_non_cabinets.map(esc).join('、')}</div>`;
+  const note = MODE===2
+    ? '每张板只翻 1 次,最贴合你这台单推锯;个别板利用率略低'
+    : (flips===1
+        ? '已挑最省料方案 —— 此单「拼宽」并不省板,故与「少翻板」结果相同(仍 1 翻)'
+        : '「拼宽」多省了板材,代价是含拼宽块的板要多翻 1 次');
+  html+=`<div class="modebar"><span class="lbl">切割方案</span>
+    <span class="seg"><button id="m2" class="${MODE===2?'on':''}" onclick="setMode(2)">少翻板 · 1 翻</button>`+
+    `<button id="m3" class="${MODE===3?'on':''}" onclick="setMode(3)">省料 · 取最省</button></span>
+    <span class="note">${note}</span></div>`;
+  html+=`<div class="tab"><button class="on" onclick="tab(0)">机台程序</button><button onclick="tab(1)">图纸</button><button onclick="tab(2)">板件 BOM</button></div>`;
+  html+=`<div class="pane on" id="p0">${renderMachine(cp)}</div>`;
+  html+=`<div class="pane" id="p1">${renderSheets(cp)}</div>`;
+  const rows=d.panels.map(p=>`<tr><td>${esc(p.panel_id)}</td><td>${esc(label(p.name))}</td><td>${p.length}×${p.width}</td><td>${p.cut_length}×${p.cut_width}</td><td>${p.thickness}</td><td>×${p.quantity}</td><td>${esc(p.edge_banding_ls)||'<span style="color:var(--muted)">不封</span>'}</td></tr>`).join('');
+  html+=`<div class="pane" id="p2"><table><thead><tr><th>panel</th><th>部件</th><th>成品</th><th>cut</th><th>厚</th><th>量</th><th>封边 L/S</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  res.innerHTML=html;msg.textContent='完成';
+}
+function tab(i){document.querySelectorAll('#result .tab button').forEach((b,j)=>b.classList.toggle('on',i===j));
+  document.querySelectorAll('#result .pane').forEach((p,j)=>p.classList.toggle('on',i===j));}
+load('kitchen');
+
+// ---- Quick cut ----
+let QC_MODE = 2, QC_ROW = 0;
+function setQcMode(m) {
+  QC_MODE = m;
+  document.querySelectorAll('#qc-seg button').forEach((b,i)=>b.classList.toggle('on',(i===0&&m===2)||(i===1&&m===3)));
+}
+function addQcRow(w, h, q) {
+  QC_ROW++;
+  const id = 'qcr' + QC_ROW;
+  const row = document.createElement('div');
+  row.id = id; row.className = 'qcrow';
+  row.innerHTML = `
+    <div class="fld"><label>宽 (mm)</label><input type="number" class="qw" value="${w||''}" placeholder="e.g. 300" min="1"></div>
+    <div class="fld"><label>高 (mm)</label><input type="number" class="qh" value="${h||''}" placeholder="e.g. 600" min="1"></div>
+    <div class="fld"><label>数量</label><input type="number" class="qq" value="${q||1}" min="1" style="max-width:70px"></div>
+    <button class="rm" onclick="document.getElementById('${id}').remove()">✕</button>`;
+  document.getElementById('qc-rows').appendChild(row);
+}
+async function runQc() {
+  const panels = [];
+  const mat = document.getElementById('qc-mat').value.replace(/（.*$/,'').trim();
+  const thk = parseFloat(document.getElementById('qc-thk').value) || 18;
+  const fin = document.getElementById('qc-fin').value.trim();
+  document.querySelectorAll('.qcrow').forEach(row => {
+    const w = parseFloat(row.querySelector('.qw').value);
+    const h = parseFloat(row.querySelector('.qh').value);
+    const q = parseInt(row.querySelector('.qq').value) || 1;
+    if (w > 0 && h > 0) panels.push({width:w, height:h, quantity:q, material:mat, thickness:thk, finish:fin});
+  });
+  if (!panels.length) { alert('请至少填一行有效尺寸'); return; }
+  const go = document.getElementById('qc-go'), msg = document.getElementById('qc-msg'), res = document.getElementById('qc-result');
+  go.disabled = true; msg.textContent = '计算中…'; res.innerHTML = '<div class="ph">处理中…</div>';
+  try {
+    const r = await fetch('/api/module2/quick-cut', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({panels, stages:QC_MODE, objective:'waste'})});
+    const body = await r.json();
+    if (!body.ok) {
+      res.innerHTML = '<div class="blk"><b>错误</b> ' + esc(JSON.stringify(body.blockers||body)) + '</div>';
+      msg.textContent = ''; go.disabled = false; return;
+    }
+    const cp = body.data;
+    const pat = cp.groups.reduce((a,g)=>a+g.distinct_patterns, 0);
+    const flips = planPaired(cp) ? 2 : 1;
+    let html = `<div class="stats">
+      <div class="stat"><div class="v">${cp.fresh_sheets}</div><div class="l">整板张数</div></div>
+      <div class="stat"><div class="v">${pat}</div><div class="l">裁切图案</div></div>
+      <div class="stat"><div class="v">${flips}</div><div class="l">翻板/张</div></div>
+      <div class="stat"><div class="v">${cp.groups.reduce((a,g)=>a+g.pieces_total,0)}</div><div class="l">板件件数</div></div>
+    </div>`;
+    html += `<div class="tab"><button class="on" onclick="qcTab(0)">机台程序</button><button onclick="qcTab(1)">图纸</button></div>`;
+    html += `<div class="pane on">${renderMachine(cp)}</div>`;
+    html += `<div class="pane">${renderSheets(cp)}</div>`;
+    res.innerHTML = html; msg.textContent = '完成';
+  } catch(e) {
+    res.innerHTML = '<div class="blk">请求失败: ' + esc(e.message) + '</div>'; msg.textContent = '';
+  }
+  go.disabled = false;
+}
+function qcTab(i) {
+  document.querySelectorAll('#qc-result .tab button').forEach((b,j)=>b.classList.toggle('on',i===j));
+  document.querySelectorAll('#qc-result .pane').forEach((p,j)=>p.classList.toggle('on',i===j));
+}
+addQcRow(300, 600, 4);
+addQcRow(200, 400, 2);
+</script>
+</body>
+</html>
