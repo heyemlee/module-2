@@ -257,7 +257,10 @@ def engineer(
                         cut_width=spec["cut_width"],
                         quantity=spec["qty"],
                         material=cab.material or "",
-                        finish=cab.finish or "",
+                        # Carcass panels carry NO door finish: they cut/group by box
+                        # material+thickness (box colour is in `material`). Door colour
+                        # lives on the CabinetRecord; the box edge band = box colour.
+                        finish="",
                         grain_direction="length",
                         edge_banding=spec["edges"],
                         production_note="",
@@ -277,17 +280,23 @@ def engineer(
                     cabinet_id=inst_id,
                     source_cabinet_id=cab.cabinet_id,
                     cabinet_code=cab.cabinet_code,
-                    type=cab.type,
+                    # Report the carcass actually decomposed, not the raw input hint —
+                    # the real code (e.g. 3DRB -> base) overrides cab.type.
+                    type=carcass_type,
                     width=cab.width,
                     depth=cab.depth,
                     height=cab.height,
                     panels=inst_panel_ids,
+                    finish=cab.finish or "",  # door finish preserved for Module 3
                     attributes=cab.attributes,
                 )
             )
 
     cut_list = _group_cut_list(panels)
     cutting_plan = build_cutting_plan(panels, order_id=order.order_id)
+    # Integrity: every cabinet must yield panels and every cut piece must trace back to
+    # a cabinet, with counts matching. A mismatch is a real bug, so it blocks loudly.
+    blockers.extend(_verify_correspondence(cabinets, panels, cutting_plan))
     status = (
         PackageStatus.engineering_blocked.value
         if blockers
@@ -307,6 +316,64 @@ def engineer(
         edge_banding_list=edge_banding,
         blockers=blockers,
     )
+
+
+def _verify_correspondence(cabinets, panels, cutting_plan) -> list[Blocker]:
+    """Check cabinet <-> panel <-> cut-piece correspondence; counts must match.
+
+    Guards the 柔单 merge: a decomposed cabinet must produce panels, and every panel
+    must be cut exactly `quantity` times and trace to a real cabinet. Catches panels
+    lost or mixed up in nesting. Returns blockers (empty = consistent).
+    """
+    blockers: list[Blocker] = []
+    cabinet_ids = {c.cabinet_id for c in cabinets}
+
+    # 1. Every cabinet that was decomposed must own at least one panel.
+    panel_cabinet_ids = {p.cabinet_id for p in panels}
+    for c in cabinets:
+        if c.cabinet_id not in panel_cabinet_ids:
+            blockers.append(
+                Blocker(
+                    code="CABINET_NO_PANELS",
+                    owner="module2",
+                    field=f"cabinets[{c.cabinet_id}]",
+                    message=f"cabinet '{c.cabinet_id}' ({c.cabinet_code}) produced no panels",
+                )
+            )
+
+    # 2. Every cut piece placed exactly `quantity` times per panel, traced to a cabinet.
+    expected = {p.panel_id: p.quantity for p in panels}
+    placed: dict[str, int] = {}
+    for group in cutting_plan.groups:
+        for sheet in group.sheets:
+            for strip in sheet.strips:
+                for block in strip.blocks:
+                    for piece in block.pieces:
+                        placed[piece.panel_id] = placed.get(piece.panel_id, 0) + 1
+                        if piece.cabinet_id not in cabinet_ids:
+                            blockers.append(
+                                Blocker(
+                                    code="PANEL_CABINET_UNLINKED",
+                                    owner="module2",
+                                    field="cutting_plan",
+                                    message=f"cut piece '{piece.panel_id}' references unknown "
+                                    f"cabinet '{piece.cabinet_id}'",
+                                )
+                            )
+
+    for pid, qty in expected.items():
+        if placed.get(pid, 0) != qty:
+            blockers.append(
+                Blocker(
+                    code="PANEL_COUNT_MISMATCH",
+                    owner="module2",
+                    field=f"panel.{pid}",
+                    message=f"panel '{pid}' decomposed x{qty} but cut-planned "
+                    f"x{placed.get(pid, 0)}",
+                )
+            )
+
+    return blockers
 
 
 def _group_cut_list(panels: list[PanelBOM]) -> list[CutGroup]:

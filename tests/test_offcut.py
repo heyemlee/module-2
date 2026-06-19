@@ -48,10 +48,10 @@ def _stock(material: str) -> list[dict]:
 
 
 def _seed(material: str, batch_id: str, width: float = 900.0) -> None:
+    # Carcass panels carry no door finish (box colour is in `material`), so the offcuts
+    # they produce — and any seeded to match them — use finish="" (see engine.py).
     db = SessionLocal()
-    store.deposit_offcuts(
-        db, batch_id, [NewOffcut(material, 18.0, FINISH, width, 2428.4)]
-    )
+    store.deposit_offcuts(db, batch_id, [NewOffcut(material, 18.0, "", width, 2428.4)])
     db.close()
 
 

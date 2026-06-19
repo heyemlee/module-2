@@ -98,6 +98,9 @@
     padding:7px 10px;margin:9px 0;max-width:720px}
   .mkey{font-size:11.5px;color:var(--muted);margin:2px 0 10px;line-height:1.7}
   .mkey b{color:var(--ink)}
+  .qcrow{display:flex;gap:10px;align-items:flex-end;margin-bottom:8px;flex-wrap:wrap}
+  .qcrow input[type=number]{min-width:90px;max-width:110px}
+  .rm{padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;color:var(--stop);font-size:13px}
   .guide summary{cursor:pointer;color:var(--blu);font-size:13.5px;font-weight:600;user-select:none;margin-top:4px}
   .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:10px;margin:8px 0 2px}
   .stepc{background:var(--soft);border-radius:11px;padding:11px 13px}
@@ -174,6 +177,37 @@
     </details>
   </div>
 
+  <!-- QC: quick cut -->
+  <div class="card">
+    <div class="ttl"><span class="num" style="background:var(--grn)">⚡</span>直接裁切 · 输入尺寸即出程序</div>
+    <p class="lead">不需要柜体清单，直接填你要的宽×高（mm），选板材，点生成。</p>
+    <div id="qc-rows"></div>
+    <button onclick="addQcRow()" style="font-size:13px;padding:6px 14px;border:1px solid var(--line);border-radius:8px;background:var(--soft);cursor:pointer;margin-bottom:10px">＋ 加一行</button>
+    <div class="form" style="margin-top:4px">
+      <div class="fld"><label>材料 Material</label>
+        <select id="qc-mat">
+          <option>White Birch plywood 18mm</option>
+          <option>White melamine plywood 18mm</option>
+          <option>Maple plywood 19mm</option>
+          <option>Cleaf-LR22-19mm</option>
+        </select></div>
+      <div class="fld"><label>厚度 (mm)</label>
+        <input type="number" id="qc-thk" value="18" style="min-width:90px;max-width:100px"></div>
+      <div class="fld"><label>Finish（可留空）</label>
+        <input type="text" id="qc-fin" placeholder="e.g. SM-Blanco" style="min-width:140px"></div>
+    </div>
+    <div style="margin-top:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span class="lbl" style="font-size:12.5px;color:var(--muted)">方案</span>
+      <span class="seg" id="qc-seg">
+        <button class="on" onclick="setQcMode(2)">少翻板</button>
+        <button onclick="setQcMode(3)">省料</button>
+      </span>
+      <button class="go" id="qc-go" onclick="runQc()">生成裁切程序 ▶</button>
+      <span class="msg" id="qc-msg"></span>
+    </div>
+    <div id="qc-result" style="margin-top:16px"></div>
+  </div>
+
   <!-- 1: Module 1 -->
   <div class="card">
     <div class="ttl"><span class="num">1</span>Module 1 输出 · 粗估柜体清单<span class="tag rough">销售估算 · ROUGH · 不可直接生产</span></div>
@@ -182,6 +216,7 @@
       <span class="chip" onclick="load('kitchen')">L 型厨房</span>
       <span class="chip" onclick="load('galley')">走廊厨房</span>
       <span class="chip" onclick="load('island')">岛台厨房</span>
+      <span class="chip" onclick="load('real')">真实订单（含填充条）</span>
     </div>
     <div class="cabs" id="cabs"></div>
   </div>
@@ -245,6 +280,16 @@ const KITCHENS = {
     {kind:"BASE",code:"B242435",width:24,depth:24,actualHeight:34.5,location:"ON_MAIN_RUN"},
     {kind:"WALL",code:"W301230",width:30,depth:12,actualHeight:30,location:"BACK_SIDE"},
     {kind:"TALL",code:"T247284",width:24,depth:24,actualHeight:84,location:"RIGHT_SIDE"},
+  ],
+  // 真实工厂订单形状：真实柜码（FDB/3DRB/W/TP）+ 填充条/装饰板/踢脚（深度0，会被过滤）。
+  real:[
+    {kind:"BASE",code:"FDB42T", width:42, depth:24, actualHeight:34.5, location:"地柜"},
+    {kind:"BASE",code:"3DRB36T",width:36, depth:24, actualHeight:34.5, location:"抽屉柜"},
+    {kind:"WALL",code:"W3636T", width:36, depth:12, actualHeight:36,   location:"吊柜"},
+    {kind:"TALL",code:"TP247284",width:24,depth:24, actualHeight:84,   location:"高柜"},
+    {kind:"FILLER",code:"TK9",   width:4.5,depth:0,  actualHeight:96,   location:"踢脚板"},
+    {kind:"FILLER",code:"WP1360",width:13, depth:0,  actualHeight:60,   location:"装饰板"},
+    {kind:"FILLER",code:"BF0335",width:3,  depth:0,  actualHeight:35,   location:"填充条"},
   ],
 };
 let M1 = [];
@@ -452,6 +497,8 @@ async function showResult(){
     <div class="stat"><div class="v">${pat}</div><div class="l">裁切图案</div></div>
     <div class="stat"><div class="v">${flips}</div><div class="l">翻板/张</div></div>
   </div>`;
+  if(d.filtered_non_cabinets && d.filtered_non_cabinets.length)
+    html+=`<div style="margin:8px 0;padding:9px 13px;background:var(--soft);border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--muted)">已过滤 <b style="color:var(--ink)">${d.filtered_non_cabinets.length}</b> 个非柜体（填充条/装饰板/踢脚，不拆板不裁切）：${d.filtered_non_cabinets.map(esc).join('、')}</div>`;
   const note = MODE===2
     ? '每张板只翻 1 次,最贴合你这台单推锯;个别板利用率略低'
     : (flips===1
@@ -464,13 +511,78 @@ async function showResult(){
   html+=`<div class="tab"><button class="on" onclick="tab(0)">机台程序</button><button onclick="tab(1)">图纸</button><button onclick="tab(2)">板件 BOM</button></div>`;
   html+=`<div class="pane on" id="p0">${renderMachine(cp)}</div>`;
   html+=`<div class="pane" id="p1">${renderSheets(cp)}</div>`;
-  const rows=d.panels.map(p=>`<tr><td>${esc(p.panel_id)}</td><td>${esc(label(p.name))}</td><td>${p.length}×${p.width}</td><td>${p.cut_length}×${p.cut_width}</td><td>${p.thickness}</td><td>×${p.quantity}</td><td>${(p.edge_banding||[]).join(',')||'-'}</td></tr>`).join('');
-  html+=`<div class="pane" id="p2"><table><thead><tr><th>panel</th><th>部件</th><th>成品</th><th>cut</th><th>厚</th><th>量</th><th>封边</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  const rows=d.panels.map(p=>`<tr><td>${esc(p.panel_id)}</td><td>${esc(label(p.name))}</td><td>${p.length}×${p.width}</td><td>${p.cut_length}×${p.cut_width}</td><td>${p.thickness}</td><td>×${p.quantity}</td><td>${esc(p.edge_banding_ls)||'<span style="color:var(--muted)">不封</span>'}</td></tr>`).join('');
+  html+=`<div class="pane" id="p2"><table><thead><tr><th>panel</th><th>部件</th><th>成品</th><th>cut</th><th>厚</th><th>量</th><th>封边 L/S</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   res.innerHTML=html;msg.textContent='完成';
 }
-function tab(i){document.querySelectorAll('.tab button').forEach((b,j)=>b.classList.toggle('on',i===j));
-  document.querySelectorAll('.pane').forEach((p,j)=>p.classList.toggle('on',i===j));}
+function tab(i){document.querySelectorAll('#result .tab button').forEach((b,j)=>b.classList.toggle('on',i===j));
+  document.querySelectorAll('#result .pane').forEach((p,j)=>p.classList.toggle('on',i===j));}
 load('kitchen');
+
+// ---- Quick cut ----
+let QC_MODE = 2, QC_ROW = 0;
+function setQcMode(m) {
+  QC_MODE = m;
+  document.querySelectorAll('#qc-seg button').forEach((b,i)=>b.classList.toggle('on',(i===0&&m===2)||(i===1&&m===3)));
+}
+function addQcRow(w, h, q) {
+  QC_ROW++;
+  const id = 'qcr' + QC_ROW;
+  const row = document.createElement('div');
+  row.id = id; row.className = 'qcrow';
+  row.innerHTML = `
+    <div class="fld"><label>宽 (mm)</label><input type="number" class="qw" value="${w||''}" placeholder="e.g. 300" min="1"></div>
+    <div class="fld"><label>高 (mm)</label><input type="number" class="qh" value="${h||''}" placeholder="e.g. 600" min="1"></div>
+    <div class="fld"><label>数量</label><input type="number" class="qq" value="${q||1}" min="1" style="max-width:70px"></div>
+    <button class="rm" onclick="document.getElementById('${id}').remove()">✕</button>`;
+  document.getElementById('qc-rows').appendChild(row);
+}
+async function runQc() {
+  const panels = [];
+  const mat = document.getElementById('qc-mat').value.replace(/（.*$/,'').trim();
+  const thk = parseFloat(document.getElementById('qc-thk').value) || 18;
+  const fin = document.getElementById('qc-fin').value.trim();
+  document.querySelectorAll('.qcrow').forEach(row => {
+    const w = parseFloat(row.querySelector('.qw').value);
+    const h = parseFloat(row.querySelector('.qh').value);
+    const q = parseInt(row.querySelector('.qq').value) || 1;
+    if (w > 0 && h > 0) panels.push({width:w, height:h, quantity:q, material:mat, thickness:thk, finish:fin});
+  });
+  if (!panels.length) { alert('请至少填一行有效尺寸'); return; }
+  const go = document.getElementById('qc-go'), msg = document.getElementById('qc-msg'), res = document.getElementById('qc-result');
+  go.disabled = true; msg.textContent = '计算中…'; res.innerHTML = '<div class="ph">处理中…</div>';
+  try {
+    const r = await fetch('/api/module2/quick-cut', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({panels, stages:QC_MODE, objective:'waste'})});
+    const body = await r.json();
+    if (!body.ok) {
+      res.innerHTML = '<div class="blk"><b>错误</b> ' + esc(JSON.stringify(body.blockers||body)) + '</div>';
+      msg.textContent = ''; go.disabled = false; return;
+    }
+    const cp = body.data;
+    const pat = cp.groups.reduce((a,g)=>a+g.distinct_patterns, 0);
+    const flips = planPaired(cp) ? 2 : 1;
+    let html = `<div class="stats">
+      <div class="stat"><div class="v">${cp.fresh_sheets}</div><div class="l">整板张数</div></div>
+      <div class="stat"><div class="v">${pat}</div><div class="l">裁切图案</div></div>
+      <div class="stat"><div class="v">${flips}</div><div class="l">翻板/张</div></div>
+      <div class="stat"><div class="v">${cp.groups.reduce((a,g)=>a+g.pieces_total,0)}</div><div class="l">板件件数</div></div>
+    </div>`;
+    html += `<div class="tab"><button class="on" onclick="qcTab(0)">机台程序</button><button onclick="qcTab(1)">图纸</button></div>`;
+    html += `<div class="pane on">${renderMachine(cp)}</div>`;
+    html += `<div class="pane">${renderSheets(cp)}</div>`;
+    res.innerHTML = html; msg.textContent = '完成';
+  } catch(e) {
+    res.innerHTML = '<div class="blk">请求失败: ' + esc(e.message) + '</div>'; msg.textContent = '';
+  }
+  go.disabled = false;
+}
+function qcTab(i) {
+  document.querySelectorAll('#qc-result .tab button').forEach((b,j)=>b.classList.toggle('on',i===j));
+  document.querySelectorAll('#qc-result .pane').forEach((p,j)=>p.classList.toggle('on',i===j));
+}
+addQcRow(300, 600, 4);
+addQcRow(200, 400, 2);
 </script>
 </body>
 </html>

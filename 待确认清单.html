@@ -95,6 +95,33 @@
   <span class="tag soft">填写区 = 虚线框</span>
 </div>
 
+<!-- 2026-06-19 流程图对照更新 -->
+<section style="border:2px solid var(--accent); background:var(--accent-soft)">
+  <h2><span class="num" style="background:var(--accent)">✓</span>2026-06-19 更新：生产流程图已对照</h2>
+  <p class="lead">收到工厂《ORDER→GN 柜号》生产流程图后，下面这些**已由图/拍板确定，无需再答**；只剩 3 条仍待补。</p>
+
+  <p style="font-weight:600;margin:10px 0 4px">已解决（无需再答）</p>
+  <table>
+    <thead><tr><th>项</th><th>确定值（来源）</th></tr></thead>
+    <tbody>
+      <tr><td>箱体封边</td><td>侧板前封 1 边、背板不封（流程图 + C26224 封边机实测一致）✅ 已落代码</td></tr>
+      <tr><td>封边按颜色</td><td>箱体封边=<b>箱体色</b>（非门板色）；裁切已改为按箱体料分组，门板色碎裂 bug 已修 ✅</td></tr>
+      <tr><td>封边条厚</td><td>门板/饰面板 ½mm·Hot Air；箱体/抽屉 1mm·Hot Melt（流程图核心规则）</td></tr>
+      <tr><td>L/S 封边标注</td><td><b>按板子实际长度判断</b>：长的那对边=L、短的=S（用户拍板）✅ 已落代码，BOM 自动出 L×n+S×m</td></tr>
+      <tr><td>配面封边</td><td>箱体某边配门板色 = <b>工单手工标注，引擎不自动推导</b>（流程图明示）；已留透传口子</td></tr>
+      <tr><td>踢脚板</td><td>4″ 白色标准、不特殊管理 → 作为非柜体<b>过滤</b>，不拆板 ✅</td></tr>
+    </tbody>
+  </table>
+
+  <p style="font-weight:600;margin:16px 0 4px">仍待确认（3 条）</p>
+  <div class="q"><span class="ck"></span><div class="body"><div class="t">① 「3DRB 中 DD = 底板」的部件公式 <span class="tag co">需公司 / 工艺给数</span></div>
+    <div class="clue">流程图说 DD=底板（短边可能配色封边），但 C26224 实测 DD=376×911.4mm，更像中竖隔板不像横底板 —— <b>矛盾</b>。请给 DD 这块板的：数量 / 成品长×宽 / cut / 封边。否则抽屉柜按普通底柜拆，可能漏这块板。</div></div></div>
+  <div class="q"><span class="ck"></span><div class="body"><div class="t">② 抽屉盒是否由 Module 2 自制？ <span class="tag you">你 / 老板可定</span> <span class="tag co">+ 拼角构造</span></div>
+    <div class="clue">流程图显示抽屉=15mm 胶合板<b>自制</b>（四板 45° 斜切拼角）。但 Module 2 现在「只引用不生产」抽屉盒。要不要 Module 2 也拆抽屉盒板件？若要，请给 45° 拼角的部件公式。</div></div></div>
+  <div class="q"><span class="ck"></span><div class="body"><div class="t">③ 备库存裁切（优化，可后置） <span class="tag soft">非阻塞</span></div>
+    <div class="clue">流程图建议：地柜侧板 24″D×34.5″H 大批备货，21″/18″/12″ 深的从 24″ 裁。这是裁切利用率优化，确认要不要做、何时做即可。</div></div></div>
+</section>
+
 <!-- 0 -->
 <section class="critical">
   <h2><span class="num">0</span>先定总方向<span class="tag you">你 / 老板可定</span></h2>

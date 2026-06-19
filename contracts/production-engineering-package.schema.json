@@ -73,6 +73,11 @@
           "title": "Panels",
           "type": "array"
         },
+        "finish": {
+          "default": "",
+          "title": "Finish",
+          "type": "string"
+        },
         "attributes": {
           "additionalProperties": true,
           "title": "Attributes",
@@ -374,6 +379,11 @@
           "default": "waste",
           "title": "Objective",
           "type": "string"
+        },
+        "stages": {
+          "default": 3,
+          "title": "Stages",
+          "type": "integer"
         },
         "sheets_total": {
           "default": 0,
@@ -690,6 +700,13 @@
         "$ref": "#/$defs/Blocker"
       },
       "title": "Blockers",
+      "type": "array"
+    },
+    "filtered_non_cabinets": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Filtered Non Cabinets",
       "type": "array"
     }
   },

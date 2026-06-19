@@ -100,6 +100,16 @@
           "default": null,
           "title": "Fixed Shelves"
         },
+        "door_qty": {
+          "default": 0,
+          "title": "Door Qty",
+          "type": "integer"
+        },
+        "drawer_qty": {
+          "default": 0,
+          "title": "Drawer Qty",
+          "type": "integer"
+        },
         "attributes": {
           "additionalProperties": true,
           "title": "Attributes",

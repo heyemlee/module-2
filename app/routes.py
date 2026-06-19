@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app import service
 from app.db import get_db
 from app.responses import ApiResponse
-from app.schemas import ApprovedCabinetOrderPackage, CuttingBatchRequest
+from app.schemas import ApprovedCabinetOrderPackage, CuttingBatchRequest, QuickCutRequest
 
 router = APIRouter(prefix="/api/module2", tags=["production-packages"])
 
@@ -81,6 +81,12 @@ def recompute_plan(
     if result.status == "not_found":
         response.status_code = 404
     return result
+
+
+@router.post("/quick-cut", response_model=ApiResponse)
+def quick_cut(request: QuickCutRequest) -> ApiResponse:
+    """Generate a cutting plan directly from panel dimensions — no cabinet decomposition."""
+    return service.quick_cut(request.panels, request.stages, request.objective)
 
 
 @router.post("/cutting-batches", response_model=ApiResponse)

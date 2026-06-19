@@ -9,9 +9,30 @@ adding fields is fine, renaming/removing requires a new `contract_version`.
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 from app.responses import Blocker
+
+
+def ls_notation(edges: list[str], length: float, width: float) -> str:
+    """Banded edges in Long/Short terms for the worker label, e.g. "L×2 + S×2".
+
+    front/back edges run along `length`; left/right run along `width`; whichever pair
+    is the board's LONGER dimension is L (long), the other S (short). Classified by the
+    board's actual length per the factory rule — not by a fixed per-part convention, so a
+    side panel's front edge (the tall 876mm edge) is L even though some sketches mark it S.
+    """
+    if not edges:
+        return ""
+    long_dim = max(length, width)
+    n_l = sum(1 for e in edges if (length if e in ("front", "back") else width) == long_dim)
+    n_s = len(edges) - n_l
+    parts = []
+    if n_l:
+        parts.append(f"L×{n_l}")
+    if n_s:
+        parts.append(f"S×{n_s}")
+    return " + ".join(parts)
 
 # ---------------------------------------------------------------------------
 # Shared enums
@@ -82,6 +103,11 @@ class CabinetInput(BaseModel):
     # Optional shelf counts; default to standard-library values when omitted.
     adjustable_shelves: int | None = None
     fixed_shelves: int | None = None
+    # Door / drawer counts (factory 门数量 / 抽屉数量). Module 2 does not produce doors
+    # or drawer boxes, but uses these to tell a real carcass from a filler/panel/toe-kick
+    # at intake (see app/intake.py — mirrors kabi-console's isCarcass rule).
+    door_qty: int = 0
+    drawer_qty: int = 0
     # Pipeline pass-through: data Module 2 doesn't compute but carries to its output
     # for Module 3 (e.g. hinge side L/R, door/drawer counts, install location,
     # exposed/finished sides). Open by design so new needs don't break the contract.
@@ -119,6 +145,11 @@ class PanelBOM(BaseModel):
     edge_banding: list[str] = Field(default_factory=list)  # front / all / []
     production_note: str = ""
 
+    @computed_field  # Long/Short edge notation for the worker label (L×n + S×m).
+    @property
+    def edge_banding_ls(self) -> str:
+        return ls_notation(self.edge_banding, self.length, self.width)
+
 
 class CabinetRecord(BaseModel):
     cabinet_id: str               # expanded instance id
@@ -129,6 +160,11 @@ class CabinetRecord(BaseModel):
     depth: float
     height: float
     panels: list[str] = Field(default_factory=list)  # panel_ids
+    # Door/show finish (e.g. SM-Antracita). Kept at cabinet level for Module 3 (doors),
+    # NOT pushed onto carcass panels — box panels cut/group by box material colour, and
+    # the box edge band is the box colour (production flowchart 核心规则). The door colour
+    # only touches a box edge in the manual "配面" case, which is a work-order note.
+    finish: str = ""
     attributes: dict[str, Any] = Field(default_factory=dict)  # passed through for Module 3
 
 
@@ -277,6 +313,23 @@ class CuttingBatchRequest(BaseModel):
     objective: Literal["waste", "throughput"] = "waste"  # fewest sheets vs fewest patterns
 
 
+class QuickCutPanelInput(BaseModel):
+    """One panel size in a quick-cut request (dimensions in mm)."""
+
+    width: float
+    height: float
+    quantity: int = 1
+    material: str = "White Birch plywood 18mm"
+    thickness: float = 18.0
+    finish: str = ""
+
+
+class QuickCutRequest(BaseModel):
+    panels: list[QuickCutPanelInput]
+    stages: int = 3          # 3=省料 | 2=少翻板
+    objective: str = "waste"
+
+
 class EdgeBandingItem(BaseModel):
     panel_id: str
     edges: list[str]
@@ -296,3 +349,6 @@ class ProductionEngineeringPackage(BaseModel):
     cutting_plan: CuttingPlan | None = None
     edge_banding_list: list[EdgeBandingItem] = Field(default_factory=list)
     blockers: list[Blocker] = Field(default_factory=list)
+    # Line items skipped at intake as non-cabinets (fillers/panels/toe-kicks), so a
+    # real order full of them isn't rejected wholesale. Reported, never silently dropped.
+    filtered_non_cabinets: list[str] = Field(default_factory=list)

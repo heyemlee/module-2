@@ -21,11 +21,14 @@ from app.cutting import (
 )
 from app.engine import engineer
 from app.gate import validate_gate
+from app.intake import partition_cabinets
 from app.responses import ApiResponse, Blocker, failure, success
 from app.schemas import (
     ApprovedCabinetOrderPackage,
     OffcutStockItem,
+    PanelBOM,
     ProductionEngineeringPackage,
+    QuickCutPanelInput,
 )
 
 
@@ -58,13 +61,32 @@ def create_production_package(
             blockers=pkg.blockers,
         )
 
-    # 2. Production gate (Module-1-owned input validation). Not persisted: the
+    # 2. Intake filter: drop fillers / panels / toe-kicks (non-cabinets) so an order
+    #    that mixes them with real cabinets isn't failed wholesale. Mirrors kabi.
+    carcasses, filtered = partition_cabinets(order.cabinets)
+    filtered_codes = [c.cabinet_code or c.cabinet_id for c in filtered]
+    if not carcasses:
+        return failure(
+            status="gate_failed",
+            blockers=[
+                Blocker(
+                    code="NO_STANDARD_CABINETS",
+                    owner="module1",
+                    field="cabinets",
+                    message="no standard cabinets to produce — all items were "
+                    "fillers/panels/toe-kicks",
+                )
+            ],
+        )
+    order = order.model_copy(update={"cabinets": carcasses})
+
+    # 3. Production gate (Module-1-owned input validation). Not persisted: the
     #    same version can be re-submitted once Module 1 fixes the source.
     gate_blockers: list[Blocker] = validate_gate(order)
     if gate_blockers:
         return failure(status="gate_failed", blockers=gate_blockers)
 
-    # 3. Decompose + assemble the package.
+    # 4. Decompose + assemble the package.
     pkg = engineer(
         order,
         work_order_id=ids.work_order_id(
@@ -73,8 +95,9 @@ def create_production_package(
         input_fingerprint=ids.input_fingerprint(order),
         contract_version=settings.contract_version,
     )
+    pkg.filtered_non_cabinets = filtered_codes
 
-    # 4. Persist (ready or blocked) and respond.
+    # 5. Persist (ready or blocked) and respond.
     store.save(db, key, pkg, order.source.cabinet_list_version)
     return ApiResponse(
         ok=pkg.status == "engineering_ready",
@@ -304,6 +327,33 @@ def get_contract() -> ApiResponse:
             "output": ProductionEngineeringPackage.model_json_schema(),
         },
     )
+
+
+def quick_cut(
+    panels: list[QuickCutPanelInput],
+    stages: int = 3,
+    objective: str = "waste",
+) -> ApiResponse:
+    """Cut a flat panel list by dimension — no cabinet decomposition needed."""
+    bom = [
+        PanelBOM(
+            panel_id=f"P{i:04d}",
+            cabinet_id="QUICK",
+            name=f"panel-{i}",
+            length=p.height,
+            width=p.width,
+            thickness=p.thickness,
+            cut_length=p.height,
+            cut_width=p.width,
+            quantity=p.quantity,
+            material=p.material,
+            finish=p.finish or "",
+            grain_direction="length",
+        )
+        for i, p in enumerate(panels, start=1)
+    ]
+    plan = build_cutting_plan(bom, order_id="QUICK", objective=objective, stages=stages)
+    return success(status="ok", data=plan.model_dump())
 
 
 def list_offcut_stock(db: Session) -> ApiResponse:

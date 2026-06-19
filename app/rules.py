@@ -73,9 +73,34 @@ class CabinetLibrary(BaseModel):
         - no family match -> fall back to ``fallback_type`` if it's a known carcass
         - otherwise ``(None, None)`` (caller emits the unsupported blocker)
         Longest prefix wins across BOTH maps, so e.g. WBF->wall but WBC->blocked.
+
+        Real factory codes carry a leading drawer-count digit (``3DRB36T`` = 3-drawer
+        base, ``1DRSB36T`` = 1-drawer sink base). The count never changes the carcass —
+        drawer boxes are not produced here (see 构造规则确认 §F) — so when the raw code
+        matches no family at all, we retry with the leading digits stripped. This only
+        rescues otherwise-unrecognized codes; every code that already matched is
+        unaffected.
         """
         code = (cabinet_code or "").upper()
 
+        carcass, carcass_len, reason, reason_len = self._match_families(code)
+
+        # Drawer-count prefix rescue: only when the raw code matched nothing.
+        if carcass is None and reason is None:
+            stripped = code.lstrip("0123456789")
+            if stripped and stripped != code:
+                carcass, carcass_len, reason, reason_len = self._match_families(stripped)
+
+        if carcass is not None and carcass_len >= reason_len:
+            return carcass, None
+        if reason is not None and reason_len > carcass_len:
+            return None, reason
+        if fallback_type in self.cabinets:
+            return fallback_type, None
+        return None, None
+
+    def _match_families(self, code: str) -> tuple[str | None, int, str | None, int]:
+        """Longest-prefix match of ``code`` against the family + blocked maps."""
         carcass, carcass_len = None, -1
         for prefix, ctype in self.code_families.items():
             if code.startswith(prefix.upper()) and len(prefix) > carcass_len:
@@ -86,13 +111,7 @@ class CabinetLibrary(BaseModel):
             if code.startswith(prefix.upper()) and len(prefix) > reason_len:
                 reason, reason_len = why, len(prefix)
 
-        if carcass is not None and carcass_len >= reason_len:
-            return carcass, None
-        if reason is not None and reason_len > carcass_len:
-            return None, reason
-        if fallback_type in self.cabinets:
-            return fallback_type, None
-        return None, None
+        return carcass, carcass_len, reason, reason_len
 
 
 @lru_cache

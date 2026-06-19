@@ -49,6 +49,24 @@ def test_unknown_code_and_type_is_unresolved():
     assert LIB.resolve_carcass("ZZZ999", "mystery") == (None, None)
 
 
+def test_drawer_count_prefix_resolves_without_fallback():
+    # Real factory codes lead with the drawer count; it must not hide the family.
+    # No fallback type supplied -> resolution must still find the carcass.
+    assert LIB.resolve_carcass("3DRB36T") == ("base", None)
+    assert LIB.resolve_carcass("3DRB24T") == ("base", None)
+    assert LIB.resolve_carcass("1DRB12L") == ("base", None)
+    # 1DRSB -> sink_base (held pending construction), not "unknown code".
+    assert LIB.resolve_carcass("1DRSB36T") == ("sink_base", None)
+
+
+def test_digit_prefix_rescue_does_not_override_real_matches():
+    # Codes that already match are untouched (rescue only fires on no-match).
+    assert LIB.resolve_carcass("FDB09L") == ("base", None)
+    assert LIB.resolve_carcass("DRB12L") == ("base", None)
+    # A leading-digit code whose stem is still unknown stays unresolved.
+    assert LIB.resolve_carcass("9ZZ123") == (None, None)
+
+
 # --- end-to-end through the engine ---
 
 
@@ -79,3 +97,14 @@ def test_sink_base_blocks_pending_confirmation():
     pkg = _engineer_one("FDRSB30L", "base", w=30)
     assert pkg.status == "engineering_blocked"
     assert "not yet confirmed" in pkg.blockers[0].message
+
+
+def test_digit_prefix_drawer_base_decomposes_without_type_hint():
+    # The factory sheet carries no `type`; a mistyped hint must not be needed.
+    # Pass a deliberately wrong hint to prove the code itself drives resolution.
+    pkg = _engineer_one("3DRB24T", "tall", w=24)
+    assert pkg.status == "engineering_ready"
+    names = {p.name for p in pkg.panels}
+    assert names == {"side", "bottom", "back", "stretcher", "adjustable_shelf"}
+    # The record must report the carcass it actually built (base), not the bad hint.
+    assert pkg.cabinets[0].type == "base"

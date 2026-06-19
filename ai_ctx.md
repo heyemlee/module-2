@@ -875,6 +875,93 @@ module2/
 - base 系列分组(DRB/CDB/vanity 当 base)需 sanity-check。
 - 裁切 B3(throughput book 单元优化 / 3 阶段 + 真优化器);材料 finish 字符串归一(分组防碎);条尾短余料入复用池;对接 Module 1/3(可选读端点未实现)。
 
+### 15.10 ✅ 真实订单深度测试 + 数字前缀码修复（2026-06-18）
+用两份真实工厂物料表 `C26147-K`(54 件) + `C26046-1`(10 件) 全面深度测试,提取 `柜子列表 Cabinets List`
+跑 resolve_carcass + 全引擎 E2E。**测试方法记录**见用户记忆 `module2-realorder-test-method`。
+
+**测试结论(按件数):** 直接拆板 17% · 数字前缀需修 10% · 水槽柜待确认 4% · 电器柜拦截 3% · **非箱体平板件 64%**。
+矩形箱体拆板**全部正确**(含 12″超浅 / 21″浴室柜 / 93″超高 TP(side cut 2362mm 落在 96″板内) / 抽屉柜按箱体拆)。
+
+**已修(有文档依据,不碰待确认构造):**
+1. **数字前缀码识别** `app/rules.py resolve_carcass`:真实码带前导抽屉数(`3DRB`/`1DRSB`),最长前缀从开头锚定
+   → 匹配不到 `DRB`/`DRSB`。修复:原码匹配不到任何家族时,剥前导数字重试(`lstrip("0-9")`)。依据=《构造规则确认》§F
+   "只产箱体不产抽屉盒",抽屉数与箱体无关。**只救原本无匹配的码,已匹配的零影响**。
+2. **输出 type 回显 bug** `app/engine.py:280`:`CabinetRecord.type` 原样回显输入 `cab.type`,真实码解析出
+   不同箱体时(3DRB→base)记录仍写输入值 → 误导下游。改为 `type=carcass_type`(报实际拆的箱体)。
+   新增 4 测试(test_types.py),**101 passed**,ruff 干净。E2E:全部传 type=base 时真实码仍正确驱动
+   (W→wall/TP→tall/3DRB→base/1DRSB→sink_base待确认/RFW·SO→拦截)。
+
+**未修(需公司/工艺确认,引擎不臆造)——应补进《待确认清单.html》:**
+- ✅ **非箱体平板件 → 已改为过滤(见 §15.11)**,不再废整单。原"建单板直通裁切路径"的提议**作废**(过度设计):
+  按用户拍板,非柜体直接过滤掉,不在 Module 2 生产。详见用户记忆 `non-box-flat-parts-gap`(已更新)。
+- 🟡 **裁切按 finish 碎裂**:同一箱体料(White Birch plywood 18mm)被门板色 finish 拆成 3 组(9+6+6 张),
+  利用率掉到 58-72%。`cutting.py:570` 分组 key=(material,thickness,**finish**),`engine.py:260` 把 cab.finish
+  灌到每块箱体板。箱体板不该按门板色分组。属 §15.9 "材料 finish 归一" 待办,真实数据坐实。详见记忆 `cutting-finish-fragmentation`。
+  (注:部分由"工厂表柜体材质列填了门板色码 MO SD6\*6"的数据不一致放大。)
+- 🟡 **W/TP 前缀误吞配件**(潜伏):WP(墙板)/WF(墙填充)被"W"判成 wall、TP2596(面板)判成 tall;现靠 depth=0 先 gate 掉。
+- 🟡 **幂等健壮性边界**(本次顺带发现):idem-key 与 work_order_id 派生输入不一致时(同 order_id+version 配不同 idem key)
+  → PK 冲突 500,而非优雅幂等返回。文档化用法(idem=order_id:version)下不触发,但建议加防御。
+
+### 15.11 ✅ 入口过滤非柜体 + 柜体↔板件对应校验（2026-06-18）
+对接 kabi 的"裁切=柔单"语义(所有标准吊/地/高柜揉一起拆板叠切)。用户拍板:**两边都过滤**(kabi 与 Module 2
+各自独立过滤),非柜体不在 Module 2 生产;柜体拆完板件要**对应回柜体,数量不对就报错**。保持简单,不动前端。
+
+| 文件 | 改动 |
+|---|---|
+| `app/intake.py`(新) | `is_cabinet`/`partition_cabinets`:镜像 kabi `isCarcass`——有门/抽/层板任一 >0 即柜体;**无部件且 depth≤0** = 填充条/装饰板/踢脚/线条 → 过滤。depth>0(部件数未知)按柜体留,交给 gate/护栏 兜底(保住现有金样本) |
+| `app/schemas.py` | `CabinetInput` 加 `door_qty/drawer_qty`(默认0,对齐工厂表 门数量/抽屉数量,供过滤判定);`ProductionEngineeringPackage` 加 `filtered_non_cabinets`(被过滤项,**报出不静默丢**) |
+| `app/service.py` | gate 前先 `partition_cabinets`;全是填充条 → `NO_STANDARD_CABINETS`;否则只把柜体喂 gate+engine,过滤项挂包上 |
+| `app/engine.py` | `_verify_correspondence(cabinets,panels,cutting_plan)`:① 每柜必产板件(否则 `CABINET_NO_PANELS`)② 每板件按 quantity 恰好裁一次且挂回有效柜体(否则 `PANEL_COUNT_MISMATCH`/`PANEL_CABINET_UNLINKED`)。在 build_cutting_plan 后调用,不一致即 block |
+| `tests/test_intake.py`(新,7例) | 过滤判定/分区保序/混单只产柜体且报过滤项/全填充条 block/对应守恒(裁切件数==板件数) |
+| `contracts/*.schema.json` | 重新导出(输入+输出契约变更) |
+
+**108 passed**(101+7),ruff 干净。**真实订单 E2E**:C26147-K 36 行混单 → 过滤 16 非柜体、拆 16 柜体(77 板件)、对应校验✅;
+C26046-1 9 行 → 过滤 6、拆 2 柜体(8 板件)、对应✅。**之前整单 gate_failed,现在柜体照拆**,剩余 blocker 只是真该挡的
+(RFW/SO 电器、1DRSB 水槽柜待确认)。注:过滤判定用 depth≤0 兜底是因 Module 2 历史输入不带 door/drawer 计数;
+kabi 侧用纯 `isCarcass`(其 BOM 有解析后的部件数),两边语义一致、对真实数据结果相同。
+
+### 15.12 ✅ 工厂生产流程图对照 + 裁切按箱体色分组（2026-06-19）
+用户给了**权威生产流程图**(ORDER→GN柜号,三线 DOOR/BOX/DRAWER → 封边 → 六面钻 → 组装 → QC → 出货)。
+这是之前一堆"待确认"封边政策的权威答案。全面对照 Module 2(只做 **BOX 箱体** 拆板+裁切):
+
+**流程图定死的封边政策(权威):**
+| 线 | 材料 | 封边 | 封边条 | 机器 |
+|---|---|---|---|---|
+| 门板/开放柜面板 | 18mm MDF/PBC | 四边全封·门板色 | ½mm·Hot Air | #3 |
+| **箱体 BOX** | **18mm 胶合板** | **侧板前封1边(S)·背板不封** | **1mm·Hot Melt** | #1浅/#2深 |
+| 抽屉 | 15mm 胶合板 | 四边全封·箱体色 | 1mm·Hot Melt | #1/#2 |
+- **核心规则**:颜色决定一切(板材色→封边条色/机器全自动);**箱体封边=箱体色**,门板色**只在"配面"特殊情况**(冰箱吊柜外露端板 L×2箱体色·S×1门板色)→ **必须工单手工标注,引擎不能自动推导**。
+- 这条**证明上一轮"三聚氰胺→全封"的材料覆盖推断是错的**(被用户否、本图坐实):真规则是按三线分,且配面是手工项。
+
+**对照结论:** 侧板前封✅、背板不封✅、箱体 1mm(eb=1)✅、box=18mm✅ —— Module 2 全对上。**唯一实锤 bug**:裁切按门板色 finish 碎裂(与"箱体封边=箱体色"矛盾)。
+
+**已修(#1, 有图做依据):** 箱体板件 `finish=""`(engine.py),按 **箱体料 material+thickness** 分组;门板 finish 移到 `CabinetRecord.finish`(供 Module 3 做门)。`tests/test_engine` 加回归(同箱体料不同门板色→1 组)。**109 passed**,ruff 干净。实测 C26147-K:White Birch plywood 18mm 从 **3 组碎裂(21 张)→ 1 组(19 张,利用率 73.3%)**。契约重导。
+
+**未修(需工厂构造数 / 你拍板 scope,引擎不臆造)——应补进《待确认清单》:**
+- **配面封边透传**:已由现有 `attributes`/`CabinetRecord.finish` 透传口子覆盖,引擎不算,工单标注原样带过去。无需改。
+- ✅ **L/S 封边标注(已修, 2026-06-19)**:用户拍板"**按板子实际长度判断**"——长的那对边=L、短的=S,与部件名无关(图里侧板标 S 是简化,以板长为准→侧板前沿876mm=**L**)。`schemas.ls_notation(edges,length,width)` + `PanelBOM.edge_banding_ls` computed_field(front/back 沿 length、left/right 沿 width,取较长对为 L)。输出/契约自动带。实测:侧/顶/底前封=`L×1`、活动层板四边=`L×2 + S×2`、背板=``。test_engine 加回归。**110 passed**。
+- **"3DRB 中 DD=底板"**:图点名 DD=底板(非门板)、短边可能配色封边;但 C26224 实测 DD 尺寸(376×911.4)不像横底板、更像中竖隔板,**矛盾未解**→ Module 2 现按普通 base 拆,可能漏中竖隔板/某板,**需工厂给该部件公式**才能补。
+- **抽屉盒自制**(15mm·45°拼角):图显示抽屉**自制**,但 §17.1 现"只引用不生产"→ **真 scope 缺口,需你拍板**;且 45°拼角构造未给,不能臆造。
+- **备库存裁切**(地柜侧板 24"D 批量备货,21/18/12 从 24 裁):裁切优化,后置。
+- **图未解决的**:背板嵌入量/层板缩进/精确 cut 扣减 —— 图给封边政策不给毫米扣减,仍靠 §17.3/Salice。
+
+### 15.13 ✅ L/S 封边标注 + Demo UI 收尾（2026-06-19, 自动执行）
+**L/S 封边标注**: 用户拍板"按板子实际长度判断"(长边对=L/短边对=S, 与部件名无关; 图里侧板标 S 是简化)。
+`schemas.ls_notation(edges,length,width)` + `PanelBOM.edge_banding_ls` computed_field(front/back 沿 length、
+left/right 沿 width, 取较长对为 L)。输出/契约自动带。实测: 侧/顶/底前封=`L×1`、活动层板四边=`L×2 + S×2`、背板=``。
+
+**Demo UI 三处收尾**(app/static/demo.html, 保持简单不改后端逻辑):
+1. 结果区显示 `filtered_non_cabinets`("已过滤 N 个非柜体…TK9、WP1360、BF0335") —— 落实"不静默丢"。
+2. 板件 BOM 的封边列改显 **L/S 标注**(L×1 / L×2+S×2 / 不封)。
+3. 加"真实订单(含填充条)"示例(FDB42T/3DRB36T/W3636T/TP247284 + TK9/WP1360/BF0335 填充条)—— 演示里能直接看到过滤生效。
+
+**110 passed**, ruff 干净, 契约重导。**浏览器 QA 通过**(真实订单示例 → 4 柜体、过滤 3 填充条并显示、BOM 出 L/S)。
+**双真实订单 E2E**: C26147-K 过滤16/拆16/77板件/对应✅/White Birch 由 3 组合并为 1 组/L/S 全有; C26046-1 过滤6/拆2/对应✅。
+**《待确认清单.html》已更新**: 加"2026-06-19 流程图对照"节, 列已解决(封边政策/L/S/箱体色分组/踢脚过滤)+ 仍待确认 3 条
+(DD=底板部件公式、抽屉盒自制 scope+45°拼角、备库存裁切)。
+
+**本轮(流程图)全部收口。剩下 3 条都卡在工厂/老板输入, 引擎不臆造:** ① DD=底板公式 ② 抽屉盒 scope ③ 备库存裁切(后置)。
+
 ---
 
 ## 17. Confirmed Build Decisions (2026-06-15, round 2)
