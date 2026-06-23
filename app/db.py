@@ -18,13 +18,19 @@ class Base(DeclarativeBase):
     """Base class for all ORM models."""
 
 
+# Railway/Heroku hand out `postgresql://` (or legacy `postgres://`), which SQLAlchemy
+# maps to psycopg2. We ship psycopg3, so normalize to the `+psycopg` driver.
+_db_url = settings.database_url
+for _prefix in ("postgresql://", "postgres://"):
+    if _db_url.startswith(_prefix) and "+psycopg" not in _db_url:
+        _db_url = "postgresql+psycopg://" + _db_url[len(_prefix):]
+        break
+
 # SQLite + FastAPI threadpool needs check_same_thread=False.
-_connect_args = (
-    {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
-)
+_connect_args = {"check_same_thread": False} if _db_url.startswith("sqlite") else {}
 
 engine = create_engine(
-    settings.database_url,
+    _db_url,
     connect_args=_connect_args,
     pool_pre_ping=True,
     echo=settings.debug,

@@ -211,7 +211,7 @@
   <!-- 1: Module 1 -->
   <div class="card">
     <div class="ttl"><span class="num">1</span>Module 1 输出 · 粗估柜体清单<span class="tag rough">销售估算 · ROUGH · 不可直接生产</span></div>
-    <p class="lead">这是 Module 1（展厅/设计）产出的样子：有柜型、柜码、粗略尺寸，但<b>还没选材、没审批</b>。换一个示例：</p>
+    <p class="lead">点示例快速开始，或<b>直接改下面的柜子 / 加柜子</b>（类型、柜码、宽深高、数量都能编辑）—— 不用碰 JSON：</p>
     <div class="samples">
       <span class="chip" onclick="load('kitchen')">L 型厨房</span>
       <span class="chip" onclick="load('galley')">走廊厨房</span>
@@ -219,6 +219,7 @@
       <span class="chip" onclick="load('real')">真实订单（含填充条）</span>
     </div>
     <div class="cabs" id="cabs"></div>
+    <button onclick="addCab()" style="font-size:13px;padding:6px 14px;border:1px solid var(--line);border-radius:8px;background:var(--soft);cursor:pointer;margin-top:4px">＋ 加柜子</button>
   </div>
 
   <!-- 2: complete -->
@@ -246,12 +247,17 @@
         </div></div>
     </div>
     <details class="adv"><summary>查看将发送给 Module 2 的 JSON（共享契约形状）</summary><pre id="json"></pre></details>
-    <div style="margin-top:14px"><button class="go" id="go" onclick="run()">提交给 Module 2 ▶</button><span class="msg" id="msg"></span></div>
+    <div style="margin-top:14px">
+      <button class="go" onclick="autoSubmit()" style="background:#2f5f9a">⚡ 一键补全并提交</button>
+      <button class="go" id="go" onclick="run()">提交给 Module 2 ▶</button>
+      <span class="msg" id="msg"></span>
+    </div>
   </div>
 
   <!-- 3: result -->
   <div class="card">
     <div class="ttl"><span class="num">3</span>Module 2 生产结果</div>
+    <div id="history"></div>
     <div id="result"><div class="ph">补全后点「提交给 Module 2」，这里显示生产包 + 裁切单</div></div>
   </div>
 </div>
@@ -295,14 +301,23 @@ const KITCHENS = {
 let M1 = [];
 function load(name){M1 = KITCHENS[name].map((c,i)=>({...c,cabinet_id:"C"+(i+1)}));renderM1();updateJson();}
 function renderM1(){
-  document.getElementById('cabs').innerHTML = M1.map(c=>`
-    <div class="cab ${c.kind}">
-      <span class="k">${c.kind}</span>
-      <div class="code">${c.code}</div>
-      <div class="dim">${c.width}″W × ${c.depth}″D × ${c.actualHeight}″H</div>
-      <div class="loc">${c.location||''}</div>
+  const s="padding:5px 7px;border:1px solid var(--line);border-radius:6px;font-size:13px";
+  const n=s+";width:60px";
+  document.getElementById('cabs').innerHTML = M1.map((c,i)=>`
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:7px 9px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:#fff">
+      <select autocomplete="off" onchange="editCab(${i},'kind',this.value)" style="${s}">${['BASE','WALL','TALL','FILLER'].map(k=>`<option ${c.kind===k?'selected':''}>${k}</option>`).join('')}</select>
+      <input autocomplete="off" value="${esc(c.code||'')}" oninput="editCab(${i},'code',this.value)" placeholder="柜码 如 B362435" style="${s};width:130px">
+      <input autocomplete="off" type="number" value="${c.width??''}" oninput="editCab(${i},'width',+this.value)" placeholder="宽″" title="宽 W″" style="${n}">
+      <input autocomplete="off" type="number" value="${c.depth??''}" oninput="editCab(${i},'depth',+this.value)" placeholder="深″" title="深 D″" style="${n}">
+      <input autocomplete="off" type="number" value="${c.actualHeight??''}" oninput="editCab(${i},'actualHeight',+this.value)" placeholder="高″" title="高 H″" style="${n}">
+      <input autocomplete="off" type="number" value="${c.quantity??1}" oninput="editCab(${i},'quantity',+this.value)" placeholder="量" title="数量" style="${n}">
+      <button onclick="delCab(${i})" title="删除" style="border:none;background:#f6f7f9;border-radius:6px;width:28px;height:28px;cursor:pointer;color:#9a2f2f">✕</button>
     </div>`).join('');
+  updateJson();
 }
+function editCab(i,f,v){M1[i][f]=v;updateJson();}
+function delCab(i){M1.splice(i,1);renderM1();}
+function addCab(){M1.push({kind:'BASE',code:'',width:30,depth:24,actualHeight:34.5,quantity:1,location:''});renderM1();}
 // 适配器：Module 1 形状 → Module 2 共享契约（kind→type、actualHeight→height、补 material/finish/approval/stage）
 function toModule2(){
   const mat = document.getElementById('material').value.replace(/（.*$/,'').trim();
@@ -315,9 +330,9 @@ function toModule2(){
       designer_approved:document.getElementById('a_design').checked},
     source:{stage:"final",cabinet_list_version:"v1"},
     units:"inches",
-    cabinets:M1.map(c=>({cabinet_id:c.cabinet_id,cabinet_code:c.code,type:c.kind.toLowerCase(),
-      width:c.width,depth:c.depth,height:c.actualHeight,quantity:1,material:mat,finish:fin,
-      attributes:{location:c.location}}))
+    cabinets:M1.map((c,i)=>({cabinet_id:"C"+(i+1),cabinet_code:c.code,type:c.kind.toLowerCase(),
+      width:c.width,depth:c.depth,height:c.actualHeight,quantity:c.quantity||1,material:mat,finish:fin,
+      attributes:{location:c.location||''}}))
   };
 }
 function updateJson(){document.getElementById('json').textContent=JSON.stringify(toModule2(),null,2);}
@@ -462,6 +477,15 @@ function renderMachine(cp){
 let WID=null, MODE=2;            // 2 = 少翻板(默认) | 3 = 省料
 function setMode(m){if(MODE===m)return;MODE=m;showResult();}
 
+// 一键补全：勾齐三方审批（料/色已是默认值，且引擎对缺料会兜底）+ 直接提交。
+function autoSubmit(){
+  document.getElementById('a_cust').checked=true;
+  document.getElementById('a_sales').checked=true;
+  document.getElementById('a_design').checked=true;
+  updateJson();
+  run();
+}
+
 async function run(){
   const go=document.getElementById('go'),msg=document.getElementById('msg'),res=document.getElementById('result');
   go.disabled=true;msg.textContent='提交中…';res.innerHTML='<div class="ph">处理中…</div>';
@@ -477,6 +501,7 @@ async function run(){
       res.innerHTML=html;msg.textContent='';go.disabled=false;return;
     }
     await showResult();
+    loadHistory();
   }catch(e){res.innerHTML='<div class="blk">请求失败: '+esc(e.message)+'</div>';msg.textContent='';}
   go.disabled=false;
 }
@@ -489,7 +514,10 @@ async function showResult(){
   const cp=(await (await fetch('/api/module2/production-packages/'+WID+'/plan?stages='+MODE+'&objective=waste')).json()).data;
   const pat=cp.groups.reduce((a,g)=>a+g.distinct_patterns,0);
   const flips=planPaired(cp)?2:1;
-  let html=`<span class="badge ok">engineering_ready</span> <span class="msg">work_order_id ${esc(WID)}</span>`;
+  const ready=d.status==='engineering_ready';
+  let html=`<span class="badge ${ready?'ok':'blocked'}">${esc(d.status)}</span> <span class="msg">work_order_id ${esc(WID)}</span>`;
+  if(d.blockers&&d.blockers.length)
+    html+=d.blockers.map(b=>`<div class="blk"><b>${esc(b.code)}</b> · owner=${esc(b.owner)} — ${esc(b.message)}</div>`).join('');
   html+=`<div class="stats">
     <div class="stat"><div class="v">${d.cabinets.length}</div><div class="l">柜体</div></div>
     <div class="stat"><div class="v">${d.panels.length}</div><div class="l">板件种类</div></div>
@@ -515,9 +543,24 @@ async function showResult(){
   html+=`<div class="pane" id="p2"><table><thead><tr><th>panel</th><th>部件</th><th>成品</th><th>cut</th><th>厚</th><th>量</th><th>封边 L/S</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   res.innerHTML=html;msg.textContent='完成';
 }
+
+// 已存订单列表（数据存 Postgres）。点一条就把它灌进上面的 showResult 渲染器,复用同一套视图。
+async function loadHistory(){
+  const el=document.getElementById('history'); if(!el)return;
+  try{
+    const d=(await (await fetch('/api/module2/production-packages')).json()).data;
+    if(!d.packages.length){el.innerHTML='';return;}
+    el.innerHTML='<div style="font-size:12.5px;color:var(--muted);margin:14px 0 8px">已存生产包（点击查看 · 存 Postgres，重启不丢）</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px">'+
+      d.packages.map(p=>{const ok=p.status==='engineering_ready';
+        return '<button onclick="pick(\''+esc(p.work_order_id)+'\')" style="cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 11px;font-size:12.5px;text-align:left">'+
+        '<b>'+esc(p.order_id)+'</b> <span style="color:var(--muted)">'+p.cabinets+'柜·'+p.panels+'板·'+(ok?p.sheets+'张':esc(p.status))+'</span></button>';}).join('')+'</div>';
+  }catch(e){}
+}
+function pick(wid){WID=wid;showResult();document.getElementById('result').scrollIntoView({behavior:'smooth',block:'nearest'});}
 function tab(i){document.querySelectorAll('#result .tab button').forEach((b,j)=>b.classList.toggle('on',i===j));
   document.querySelectorAll('#result .pane').forEach((p,j)=>p.classList.toggle('on',i===j));}
-load('kitchen');
+load('kitchen');loadHistory();
 
 // ---- Quick cut ----
 let QC_MODE = 2, QC_ROW = 0;

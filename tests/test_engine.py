@@ -147,6 +147,17 @@ def test_quantity_expands_into_instances():
     assert len({p.panel_id for p in pkg.panels}) == 15
 
 
+def test_missing_material_defaults_to_standard_stock():
+    # M1 omits box material -> engine defaults it to White Birch 18mm, no blocker.
+    cab = CabinetInput(
+        cabinet_id="C001", cabinet_code="B302435", type="base",
+        width=30, depth=24, height=34.5, quantity=1, material=None, finish=None,
+    )
+    pkg = engineer(make_order(cabinet=cab), "WO-DEF", "fp", CV)
+    assert pkg.status == "engineering_ready"
+    assert pkg.panels and all(p.material == "White Birch plywood 18mm" for p in pkg.panels)
+
+
 def test_unsupported_type_blocks():
     cab = CabinetInput(
         cabinet_id="C099",

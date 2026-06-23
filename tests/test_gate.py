@@ -43,7 +43,8 @@ def test_empty_cabinet_list_blocks():
     assert "EMPTY_CABINET_LIST" in _codes(validate_gate(order))
 
 
-def test_missing_material_blocks():
+def test_missing_material_passes_gate():
+    # Box material is optional now — the engine defaults it to standard carcass stock.
     cab = CabinetInput(
         cabinet_id="C001",
         cabinet_code="B302435",
@@ -55,7 +56,7 @@ def test_missing_material_blocks():
         material="",
         finish="white",
     )
-    assert "MISSING_FIELD" in _codes(validate_gate(make_order(cabinet=cab)))
+    assert "MISSING_FIELD" not in _codes(validate_gate(make_order(cabinet=cab)))
 
 
 def test_invalid_dimension_blocks():
@@ -73,13 +74,13 @@ def test_invalid_dimension_blocks():
     assert "INVALID_DIMENSION" in _codes(validate_gate(make_order(cabinet=cab)))
 
 
-def test_null_material_blocks_like_missing():
-    # round1 maturity: material/finish nullable in the type, but the gate requires them
+def test_null_material_and_finish_pass_gate():
+    # material/finish nullable and no longer gate-required (engine defaults box material).
     cab = CabinetInput(
         cabinet_id="C001", cabinet_code="B302435", type="base",
         width=30, depth=24, height=34.5, quantity=1, material=None, finish=None,
     )
-    assert "MISSING_FIELD" in _codes(validate_gate(make_order(cabinet=cab)))
+    assert "MISSING_FIELD" not in _codes(validate_gate(make_order(cabinet=cab)))
 
 
 def test_non_inches_units_blocks():

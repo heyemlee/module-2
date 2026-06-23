@@ -34,6 +34,12 @@ def create_package(
     return result
 
 
+@router.get("/production-packages", response_model=ApiResponse)
+def list_packages(db: Session = Depends(get_db)) -> ApiResponse:
+    """Browsable list of stored production packages (newest first)."""
+    return service.list_production_packages(db)
+
+
 @router.get("/production-packages/{work_order_id}", response_model=ApiResponse)
 def read_package(
     work_order_id: str,

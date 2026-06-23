@@ -27,6 +27,9 @@ from app.schemas import (
 INCHES_TO_MM = 25.4
 SHEET_SIZE = "1219.2x2438.4"
 BANDING = "matching"
+# ★ high-frequency carcass stock (kabi 材料清单). Used when Module 1 omits box material,
+# so the box material is no longer a required input — it defaults here.
+DEFAULT_BOX_MATERIAL = "White Birch plywood 18mm"
 
 # part_catalog `edges:` name -> banded edges.
 EDGE_SETS: dict[str, list[str]] = {
@@ -215,6 +218,8 @@ def engineer(
             continue
 
         w_mm, d_mm, h_mm = to_mm(cab.width), to_mm(cab.depth), to_mm(cab.height)
+        # Box material defaults to the standard carcass stock when M1 omits it.
+        box_material = cab.material or DEFAULT_BOX_MATERIAL
         # Shelf counts default inside decompose() via each part's `default` in YAML.
         specs = decompose(
             carcass_type, w_mm, d_mm, h_mm, cab.adjustable_shelves, cab.fixed_shelves
@@ -222,7 +227,7 @@ def engineer(
 
         # Feasibility guard: don't emit non-positive or oversize panels to the saw.
         # Check against this cabinet's material stock (a wide panel may fit larger stock).
-        mat_board = board.for_material(cab.material or "")
+        mat_board = board.for_material(box_material)
         reason = _infeasible_reason(
             specs, mat_board.usable_width, mat_board.sheet_length
         )
@@ -256,7 +261,7 @@ def engineer(
                         cut_length=spec["cut_length"],
                         cut_width=spec["cut_width"],
                         quantity=spec["qty"],
-                        material=cab.material or "",
+                        material=box_material,
                         # Carcass panels carry NO door finish: they cut/group by box
                         # material+thickness (box colour is in `material`). Door colour
                         # lives on the CabinetRecord; the box edge band = box colour.
