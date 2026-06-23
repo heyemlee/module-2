@@ -125,6 +125,26 @@ def get_production_package(db: Session, work_order_id: str) -> ApiResponse:
     return success(status=pkg.status, data=pkg.model_dump())
 
 
+def list_production_packages(db: Session, limit: int = 100) -> ApiResponse:
+    """A browsable view of stored packages (newest first) — summary rows only."""
+    items = []
+    for row in store.list_packages(db, limit):
+        pkg = store.load_package(row)
+        items.append(
+            {
+                "work_order_id": row.work_order_id,
+                "order_id": row.order_id,
+                "status": row.status,
+                "created_at": row.created_at,
+                "cabinets": len(pkg.cabinets),
+                "panels": len(pkg.panels),
+                "sheets": pkg.cutting_plan.sheets_total if pkg.cutting_plan else 0,
+                "package_url": f"/api/module2/production-packages/{row.work_order_id}",
+            }
+        )
+    return success(status="ok", data={"count": len(items), "packages": items})
+
+
 def get_cutting_plan_text(db: Session, work_order_id: str) -> str | None:
     """Worker-readable cut sheet, or None if the work order is unknown."""
     row = store.get_by_work_order_id(db, work_order_id)

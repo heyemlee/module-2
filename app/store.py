@@ -66,6 +66,17 @@ def load_package(row: ProductionPackage) -> ProductionEngineeringPackage:
     return ProductionEngineeringPackage.model_validate_json(row.package_json)
 
 
+def list_packages(db: Session, limit: int = 100) -> list[ProductionPackage]:
+    """Stored packages, newest first (created_at is ISO → lexical sort = chronological)."""
+    return list(
+        db.scalars(
+            select(ProductionPackage)
+            .order_by(ProductionPackage.created_at.desc())
+            .limit(limit)
+        )
+    )
+
+
 # --- Cutting batches (cross-order merged plans) ---
 
 

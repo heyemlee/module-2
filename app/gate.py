@@ -84,11 +84,9 @@ def validate_gate(order: ApprovedCabinetOrderPackage) -> list[Blocker]:
             blockers.append(_missing(prefix, "cabinet_code"))
         if not cab.type.strip():
             blockers.append(_missing(prefix, "type"))
-        # material/finish are nullable until `final`; the gate requires them here.
-        if not (cab.material or "").strip():
-            blockers.append(_missing(prefix, "material"))
-        if not (cab.finish or "").strip():
-            blockers.append(_missing(prefix, "finish"))
+        # material/finish are NOT gate-required: a missing box material defaults to the
+        # standard carcass stock in the engine (DEFAULT_BOX_MATERIAL), and door finish is a
+        # Module-3 pass-through (Module 2 cuts box panels, not doors).
         for dim in ("width", "depth", "height"):
             if getattr(cab, dim) <= 0:
                 blockers.append(
